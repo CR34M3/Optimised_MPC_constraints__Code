@@ -10,7 +10,6 @@
 
 from scipy import *
 
-# --skeleton--
 # insert AIS (equations : Ax<b)
 #	- convert to vertices on feasible region
 #   - con2vert [translation in progress]
@@ -46,5 +45,6 @@ AOSvert = AOSverttemp[1:,:] #remove first line of junk data from AOSverttemp
 #	- use ver2con on AOSvert
 #	- use con2vert with AOScon and DOScon to get intersection
 
-TODO
+#TODO
 # (Vectors defining inside/outside to calc)
+# (Plotting for lower dimensional shapes)
