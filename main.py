@@ -4,28 +4,40 @@
 # Author: Andre Campher
 # 2010-04-27
 #
-# Dependancies: NumPy
+# Dependencies: SciPy
 
-from numpy import matrix
+from scipy import *
 
 # --skeleton--
 # insert AIS (equations : Ax<b)
 #	- convert to vertices on feasible region
 #   - con2vert [in progress]
-AIS = matrix('1 0 1 0; 1 0 -1 1; 0 1 1 0; 0 1 -1 1') #equations in the form Ax<b, matrix = [A s b] with s the sign vector
+AIS = mat('1 0 1 -1; 1 0 -1 1; 0 1 1 -1; 0 1 -1 1') #equations in the form Ax<b, matrix = [A s b] with s the sign vector
 #AIS_s =
 #AIS_A =
 #AIS_b =  
-AISvert = matrix('0 0; 0 1; 1 0; 1 1')
-print AISvert
+AISvert = mat('-1 -1; -1 1; 1 -1; 1 1') #manual vertex insertion while con2vert is being translated
 
 # insert DOS (equations : Ax<b)
 #	- convert to vertices on feasible region (necessary?)
+DOS = mat('1 0 1 -1; 1 0 -1 1; 0 1 1 -1; 0 1 -1 1') #equations in the form Ax<b, matrix = [A s b] with s the sign vector
+#DOS_s =
+#DOS_A =
+#DOS_b =  
+DOSvert = mat('-1 -1; -1 1; 1 -1; 1 1') #manual vertex insertion while con2vert is being translated
+tester = mat('1; 1')
 
 # insert G (steady-state model)
+G = mat('1.2 0.5; 0.5 1.2') #gain matrix - atm linear steady state matrix
 
 # calc AOS (from G and AIS)
 #	- convert vertices to equations (Ax<b)
+AOSverttemp = empty([1,2])
+for vert in AISvert:
+	x = G*vert.transpose()
+	AOSverttemp = vstack((AOSverttemp,x))
+
+AOSvert = AOSverttemp[1:,:] #remove first line of junk data from AOSverttemp
 
 # Calc intersection of AOS|DOS
 
