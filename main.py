@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # main.py
 # Main file for M Project (Optimised MPC Constraints)
 #
@@ -39,7 +41,7 @@ for vert in AISvert:
 	AOSverttemp = vstack((AOSverttemp,x.transpose()))
 
 AOSvert = AOSverttemp[1:,:] #remove first line of junk data from AOSverttemp
-print AOSvert
+
 # Calc intersection of AOS|DOS
 
 # (Vectors defining inside/outside to calc)

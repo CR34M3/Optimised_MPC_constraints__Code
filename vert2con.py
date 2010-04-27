@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # vert2con.py
 # Python implementation of vert2con.m by Michael Kleder (July 2005),
 #  available: http://www.mathworks.co.jp/matlabcentral/fileexchange/7895-vert2con-vertices-to-constraints
