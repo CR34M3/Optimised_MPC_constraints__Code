@@ -11,7 +11,7 @@ from scipy import *
 # --skeleton--
 # insert AIS (equations : Ax<b)
 #	- convert to vertices on feasible region
-#   - con2vert [in progress]
+#   - con2vert [translation in progress]
 AIS = mat('1 0 1 -1; 1 0 -1 1; 0 1 1 -1; 0 1 -1 1') #equations in the form Ax<b, matrix = [A s b] with s the sign vector
 #AIS_s =
 #AIS_A =
@@ -32,13 +32,14 @@ G = mat('1.2 0.5; 0.5 1.2') #gain matrix - atm linear steady state matrix
 
 # calc AOS (from G and AIS)
 #	- convert vertices to equations (Ax<b)
+#   - vert2con [translation in progress]
 AOSverttemp = empty([1,2])
 for vert in AISvert:
 	x = G*vert.transpose()
-	AOSverttemp = vstack((AOSverttemp,x))
+	AOSverttemp = vstack((AOSverttemp,x.transpose()))
 
 AOSvert = AOSverttemp[1:,:] #remove first line of junk data from AOSverttemp
-
+print AOSvert
 # Calc intersection of AOS|DOS
 
 # (Vectors defining inside/outside to calc)
