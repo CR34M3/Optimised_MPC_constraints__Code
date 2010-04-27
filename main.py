@@ -35,7 +35,7 @@ G = mat('1.2 0.5; 0.5 1.2') #gain matrix - atm linear steady state matrix
 # calc AOS (from G and AIS)
 #	- convert vertices to equations (Ax<b)
 #   - vert2con [translation in progress]
-AOSverttemp = empty([1,2])
+AOSverttemp = empty([1,AISvert.shape[1]])
 for vert in AISvert:
 	x = G*vert.transpose()
 	AOSverttemp = vstack((AOSverttemp,x.transpose()))
@@ -43,5 +43,8 @@ for vert in AISvert:
 AOSvert = AOSverttemp[1:,:] #remove first line of junk data from AOSverttemp
 
 # Calc intersection of AOS|DOS
+#	- use ver2con on AOSvert
+#	- use con2vert with AOScon and DOScon to get intersection
 
+TODO
 # (Vectors defining inside/outside to calc)
