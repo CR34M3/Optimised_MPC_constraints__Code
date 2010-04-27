@@ -9,6 +9,7 @@
 # --skeleton--
 # insert AIS (equations : Ax<b)
 #	- convert to vertices on feasible region
+#   - con2vert [in progress]
 
 # insert DOS (equations : Ax<b)
 #	- convert to vertices on feasible region (necessary?)
