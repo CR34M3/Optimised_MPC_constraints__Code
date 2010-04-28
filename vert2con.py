@@ -38,7 +38,7 @@ from scipy import *
 import string
 import subprocess #to use qhull
 
-V = mat('0 0 0; 0 1 1;0    0 1; 1 0    8; 7 8 9') #vertex points matrix to test
+V = mat('0 0 0; 0 0 2; 0 2 0; 0 2 2; 2 0 0; 2 0 2; 2 1 2; 1 2 2; 2 2 0; 2 2 1') #vertex points matrix to test
 
 # ================ generate data file for qhull
 #format:
@@ -46,7 +46,7 @@ V = mat('0 0 0; 0 1 1;0    0 1; 1 0    8; 7 8 9') #vertex points matrix to test
 # p //number of points (rows of V)
 # v //points e.g. 1 3 12 \n 2 4 5
 
-infile = open("qhullin",'w')
+infile = open("qhullin",'w') #generate input file
 infile.write(str(V.shape[1])+"\n"+str(V.shape[0])+"\n")
 for row in range(0,V.shape[0]):
 	stringmat = ""
@@ -57,5 +57,9 @@ infile.close()
 
 # subprocess.call(["function","arguments"]) or subprocess.Popen('function expression', shell=True)
 # run qhull with: qhull < data or cat data | qhull
+
+qhullp = subprocess.Popen('qhull p < qhullin', shell=True, stdout=subprocess.PIPE)
+k = qhullp.communicate()[0]
+
 
 #subprocess.call("qhull")
