@@ -1,43 +1,15 @@
 #!/usr/bin/env python
 
 # vert2con.py
-# Python implementation of vert2con.m by Michael Kleder (July 2005),
-#  available: http://www.mathworks.co.jp/matlabcentral/fileexchange/7895-vert2con-vertices-to-constraints
 # Converts sets of vertices to a list of constraints (of the feasible region)
+# Output, A,b and s of the set;  Ax < b   (s is the sign-vector [to be used later])
 #
-# Author: Michael Kelder (Original)
-#         Andre Campher (Python implementation)
-
+# Author: Andre Campher
+#
 # Dependencies: * qhull (libqhull5, qhull-bin)
 #               * scipy
-#               * numpy
-
-
-# ============ MATLAB code ==================
-# function [A,b] = vert2con(V)
-# k = convhulln(V);
-# c = mean(V(unique(k),:));
-# V=V-repmat(c,[size(V,1) 1]);
-# A  = NaN*zeros(size(k,1),size(V,2));
-# rc=0;
-# for ix = 1:size(k,1)
-#     F = V(k(ix,:),:);
-#     if rank(F,1e-5) == size(F,1)
-#         rc=rc+1;
-#         A(rc,:)=F\ones(size(F,1),1);
-#     end
-# end
-# A=A(1:rc,:);
-# b=ones(size(A,1),1);
-# b=b+A*c';
-# % eliminate dumplicate constraints:
-# [null,I]=unique(num2str([A b],6),'rows');
-# A=A(I,:); % rounding is NOT done for actual returned results
-# b=b(I);
-# return
 
 from scipy import *
-from numpy import matlib
 import string
 import subprocess #to use qhull
 
@@ -61,13 +33,13 @@ infile.close()
 # subprocess.call(["function","arguments"]) or subprocess.Popen('function expression', shell=True)
 # run qhull with: qhull < data or cat data | qhull
 
-qhullp = subprocess.Popen('qhull p < qhullin', shell=True, stdout=subprocess.PIPE)
-Vc = qhullp.communicate()[0] #qhull output to k
+qhullp = subprocess.Popen('qhull n < qhullin', shell=True, stdout=subprocess.PIPE) #calc convex hull and get normals
+Vc = qhullp.communicate()[0] #qhull output to Vc
 ks = Vc.split('\n')
 ks = string.join(ks[2:],';') #remove leading dimension output
 k = mat(ks[:-1]) #convert to martrix with vertices
 
-c = mean(k,0) #column means
-
-V = V-matlib.repmat(c,V.shape[0],1)
-
+# k is a (n+1)x(p) matrix in the form [A b] (from qhull doc: Ax < -b is satisfied), thus;
+A = k[:,:-1]
+b = -k[:,-1]
+s = -ones([k.shape[0],1])
