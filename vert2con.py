@@ -13,7 +13,11 @@ from scipy import *
 import string
 import subprocess #to use qhull
 
-V = mat('0 0 0; 0 0 2; 0 2 0; 0 2 2; 2 0 0; 2 0 2; 2 1 2; 1 2 2; 2 2 0; 2 2 1') #vertex points matrix to test
+# testing matrices
+#V = mat('0 0 0; 0 0 2; 0 2 0; 0 2 2; 2 0 0; 2 0 2; 2 1 2; 1 2 2; 2 2 0; 2 2 1') #vertex points matrix to test
+V = mat('100 170; 200 170; 200 80; 120 80; 100 100') 			#http://www.purplemath.com/modules/linprog3.htm
+#V = mat('0 0 0; 0 0 2; 0 2 0; 0 2 2; 2 0 0; 2 0 2; 2 1 2; 1 2 2; 2 2 0; 2 2 1') #vertex points matrix to test
+#V = mat('0 0 0; 0 0 2; 0 2 0; 0 2 2; 2 0 0; 2 0 2; 2 1 2; 1 2 2; 2 2 0; 2 2 1') #vertex points matrix to test
 
 # ================ generate data file for qhull
 #format:
@@ -43,3 +47,5 @@ k = mat(ks[:-1]) #convert to martrix with vertices
 A = k[:,:-1]
 b = -k[:,-1]
 s = -ones([k.shape[0],1])
+
+print A,"\n\n",b
