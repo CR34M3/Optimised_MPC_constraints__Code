@@ -6,4 +6,9 @@
 # Converts sets of vertices to a list of constraints (of the feasible region)
 #
 # Author: Michael Kelder (Original)
-#		  André Campher (Python implementation)
+#         Andre Campher (Python implementation)
+
+# Dependencies: * qhull (libqhull5, qhull-bin)
+
+import subprocess
+subprocess.call("ls")
