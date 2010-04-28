@@ -9,6 +9,8 @@
 #         Andre Campher (Python implementation)
 
 # Dependencies: * qhull (libqhull5, qhull-bin)
+#               * scipy
+#               * numpy
 
 
 # ============ MATLAB code ==================
@@ -35,6 +37,7 @@
 # return
 
 from scipy import *
+from numpy import matlib
 import string
 import subprocess #to use qhull
 
@@ -59,7 +62,12 @@ infile.close()
 # run qhull with: qhull < data or cat data | qhull
 
 qhullp = subprocess.Popen('qhull p < qhullin', shell=True, stdout=subprocess.PIPE)
-k = qhullp.communicate()[0]
+Vc = qhullp.communicate()[0] #qhull output to k
+ks = Vc.split('\n')
+ks = string.join(ks[2:],';') #remove leading dimension output
+k = mat(ks[:-1]) #convert to martrix with vertices
 
+c = mean(k,0) #column means
 
-#subprocess.call("qhull")
+V = V-matlib.repmat(c,V.shape[0],1)
+
