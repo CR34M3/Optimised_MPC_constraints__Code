@@ -6,4 +6,4 @@
 # Converts sets of constraints to a list of vertices (of the feasible region)
 #
 # Author: Michael Kelder (Original)
-#		  André Campher (Python implementation)
+#         Andre Campher (Python implementation)
