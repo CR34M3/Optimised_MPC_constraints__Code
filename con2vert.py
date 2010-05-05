@@ -55,8 +55,9 @@ b = mat('0;0;0;1;1;1')
 c = linalg.lstsq(A,b)[0]
 b = b-A*c
 D = A / matlib.repmat(b,1,A.shape[1])
+Dtest = vstack((D,zeros([1,D.shape[1]])))
 
-#qhullp = subprocess.Popen('qhull n < qhullin', shell=True, stdout=subprocess.PIPE) #calc convex hull and get normals
+qhullp = subprocess.Popen('qhull FA < qhullin', shell=True, stdout=subprocess.PIPE) #calc convex hull and get normals
 #Vc = qhullp.communicate()[0] #qhull output to Vc
 #ks = Vc.split('\n')
 #ks = string.join(ks[2:],';') #remove leading dimension output
@@ -66,7 +67,7 @@ D = A / matlib.repmat(b,1,A.shape[1])
 #    error('Non-bounding constraints detected. (Consider box constraints on variables.)')
 #end
 
-print D
+print Dtest
 
 #TODO =====
 # error-checking
