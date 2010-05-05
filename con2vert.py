@@ -44,13 +44,17 @@
 
 # Dependencies : - Scipy
 #		 - Numpy
+#		 - gendatafile
+#		 - uniqmat
 
 from scipy import *
 from numpy import linalg, matlib
 from gendatafile import *
+from uniqmat import *
 from os import remove
 from string import join
 from sys import exit
+from itertools import groupby
 import subprocess
 
 #unit cube in 3D for testing
@@ -90,15 +94,18 @@ fmat = mat(join(fmat,';')) #generate matrix
 fmatn = fmat[:,0] #number of points on facets
 fmatv = fmat[:,1:] #vertices on facets
 
-print fmatn
-print fmatv
+G  = zeros((fmatv.shape[0],D.shape[1]));
+for ix in range(0,fmatv.shape[0]):
+	F = D[fmatv[ix,:],:].squeeze()
+	G[ix,:] = linalg.lstsq(F,ones((F.shape[0],1)))[0].transpose()
 
-G  = zeros(D.shape);
-#for ix in range(0,D.shape[0]):
-#	F = D[](k(ix,:),:);
-#    G(ix,:)=F\ones(size(F,1),1);
-#end
-#V = G + repmat(c',[size(G,1),1]);
+V = G + matlib.repmat(c.transpose(),G.shape[0],1)
+
+ux = uniqm(V,0.01)
+
+print ux
+
+#print V.round(3)
 #[null,I]=unique(num2str(V,6),'rows');
 #V=V(I,:);
 
