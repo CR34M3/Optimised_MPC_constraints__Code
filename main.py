@@ -41,6 +41,8 @@ for vert in AISvert:
 
 AOSvert = AOSverttemp[1:,:] #remove first line of junk data from AOSverttemp
 
+print AOSvert
+
 # Calc intersection of AOS|DOS
 #	- use ver2con on AOSvert
 #	- use con2vert with AOScon and DOScon to get intersection
