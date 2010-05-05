@@ -47,6 +47,9 @@
 
 from scipy import *
 from numpy import linalg, matlib
+from gendatafile import *
+from os import remove
+import subprocess
 
 #unit cube in 3D for testing
 A = mat('-1 0 0; 0 -1 0; 0 0 -1; 1 0 0; 0 1 0; 0 0 1')
@@ -57,17 +60,23 @@ b = b-A*c
 D = A / matlib.repmat(b,1,A.shape[1])
 Dtest = vstack((D,zeros([1,D.shape[1]])))
 
-qhullp = subprocess.Popen('qhull FA < qhullin', shell=True, stdout=subprocess.PIPE) #calc convex hull and get normals
-#Vc = qhullp.communicate()[0] #qhull output to Vc
+
+#== Volume error check ==
+genfile(D)
+qhullp = subprocess.Popen('qhull FA < qhullin', shell=True, stdout=subprocess.PIPE) #calc summary and volume
+Vc = qhullp.communicate()[0] #qhull output to Vc
 #ks = Vc.split('\n')
 #ks = string.join(ks[2:],';') #remove leading dimension output
 #k = mat(ks[:-1])
+
+#genfile(Dtest)
 
 #if v2 > v1
 #    error('Non-bounding constraints detected. (Consider box constraints on variables.)')
 #end
 
-print Dtest
+print Vc
+remove('qhullin')
 
 #TODO =====
 # error-checking
