@@ -8,40 +8,6 @@
 # Author: Michael Kelder (Original)
 #         Andre Campher (Python implementation)
 
-# ===== Original MATLAB Code =====
-#c = A\b;
-#if ~all(A*c < b);
-#    [c,f,ef] = fminsearch(@obj,c,'params',{A,b});
-#    if ef ~= 1
-#        error('Unable to locate a point within the interior of a feasible region.')
-#    end
-#end
-#b = b - A*c;
-#D = A ./ repmat(b,[1 size(A,2)]);
-#[k,v2] = convhulln([D;zeros(1,size(D,2))]);
-#[k,v1] = convhulln(D);
-#if v2 > v1
-#    error('Non-bounding constraints detected. (Consider box constraints on variables.)')
-#end
-#nr = unique(k(:));
-#G  = zeros(size(k,1),size(D,2));
-#for ix = 1:size(k,1)
-#    F = D(k(ix,:),:);
-#    G(ix,:)=F\ones(size(F,1),1);
-#end
-#V = G + repmat(c',[size(G,1),1]);
-#[null,I]=unique(num2str(V,6),'rows');
-#V=V(I,:);
-#return
-#function d = obj(c,params)
-#A=params{1};
-#b=params{2};
-#d = A*c-b;
-#k=(d>=-1e-15);
-#d(k)=d(k)+1;
-#d = max([0;d]);
-#return
-
 # Dependencies : - Scipy
 #		 - Numpy
 #		 - gendatafile
