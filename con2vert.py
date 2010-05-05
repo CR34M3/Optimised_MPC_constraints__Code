@@ -49,6 +49,7 @@ from scipy import *
 from numpy import linalg, matlib
 from gendatafile import *
 from os import remove
+from string import split
 import subprocess
 
 #unit cube in 3D for testing
@@ -62,20 +63,24 @@ Dtest = vstack((D,zeros([1,D.shape[1]])))
 
 
 #== Volume error check ==
+genfile(Dtest)
+qhullp = subprocess.Popen('qhull FA < qhullin', shell=True, stdout=subprocess.PIPE) #calc summary and volume
+Vc = qhullp.communicate()[0] #qhull output to Vc
+ks = Vc.split('\n')[-3]
+VolDt = float(ks.split(' ')[-1]) #get volume of D-hull
+
 genfile(D)
 qhullp = subprocess.Popen('qhull FA < qhullin', shell=True, stdout=subprocess.PIPE) #calc summary and volume
 Vc = qhullp.communicate()[0] #qhull output to Vc
-#ks = Vc.split('\n')
-#ks = string.join(ks[2:],';') #remove leading dimension output
-#k = mat(ks[:-1])
-
-#genfile(Dtest)
+ks = Vc.split('\n')[-3]
+VolD = float(ks.split(' ')[-1]) #get volume of D-hull
 
 #if v2 > v1
 #    error('Non-bounding constraints detected. (Consider box constraints on variables.)')
 #end
 
-print Vc
+print VolDt
+print VolD
 remove('qhullin')
 
 #TODO =====
