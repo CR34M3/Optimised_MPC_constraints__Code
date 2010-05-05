@@ -49,7 +49,8 @@ from scipy import *
 from numpy import linalg, matlib
 from gendatafile import *
 from os import remove
-from string import split
+from string import join
+from sys import exit
 import subprocess
 
 #unit cube in 3D for testing
@@ -75,13 +76,34 @@ Vc = qhullp.communicate()[0] #qhull output to Vc
 ks = Vc.split('\n')[-3]
 VolD = float(ks.split(' ')[-1]) #get volume of D-hull
 
-#if v2 > v1
-#    error('Non-bounding constraints detected. (Consider box constraints on variables.)')
-#end
+if VolDt > VolD:
+	print 'error : Non-bounding constraints detected. (Consider box constraints on variables.)'
+	exit(1)
+#== ==
 
-print VolDt
-print VolD
-remove('qhullin')
+qhullp = subprocess.Popen('qhull Ft < qhullin', shell=True, stdout=subprocess.PIPE) #calc vertices and facets
+Vc = qhullp.communicate()[0] #qhull output to Vc
+ks = Vc.split('\n')
+fms = int(ks[1].split(' ')[1]) #get size of facet matrix
+fmat = ks[-fms-1:-1]
+fmat = mat(join(fmat,';')) #generate matrix
+fmatn = fmat[:,0] #number of points on facets
+fmatv = fmat[:,1:] #vertices on facets
+
+print fmatn
+print fmatv
+
+G  = zeros(D.shape);
+#for ix in range(0,D.shape[0]):
+#	F = D[](k(ix,:),:);
+#    G(ix,:)=F\ones(size(F,1),1);
+#end
+#V = G + repmat(c',[size(G,1),1]);
+#[null,I]=unique(num2str(V,6),'rows');
+#V=V(I,:);
+
+#print G
+#remove('qhullin')
 
 #TODO =====
 # error-checking
