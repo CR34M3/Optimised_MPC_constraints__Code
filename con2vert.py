@@ -58,8 +58,14 @@ from itertools import groupby
 import subprocess
 
 #unit cube in 3D for testing
-A = mat('-1 0 0; 0 -1 0; 0 0 -1; 1 0 0; 0 1 0; 0 0 1')
-b = mat('0;0;0;1;1;1')
+#A = mat('-1 0 0; 0 -1 0; 0 0 -1; 1 0 0; 0 1 0; 0 0 1')
+#b = mat('0;0;0;1;1;1')
+#cut cube in 3D for testing
+#A = mat('-1 0 0;0 -1 0;0 0 -1;1 0 0;0 1 0; 0 0 1; 1 1 1')
+#b = mat('0;0;0;2;2;2;5')
+#2D example - 5 equations
+A = mat('1 0;0 1;-1 0;0 -1;-1 -1')
+b = mat('200;170;-100;-80;-200')
 
 c = linalg.lstsq(A,b)[0]
 b = b-A*c
@@ -103,14 +109,9 @@ V = G + matlib.repmat(c.transpose(),G.shape[0],1)
 
 ux = uniqm(V,0.01)
 
-print ux
-
-#print V.round(3)
-#[null,I]=unique(num2str(V,6),'rows');
-#V=V(I,:);
-
-#print G
-#remove('qhullin')
+print ux.round(3)
+remove('qhullin')
 
 #TODO =====
 # error-checking
+#	- fix volume check (for redundant constraints)
