@@ -30,53 +30,54 @@ import subprocess
 #A = mat('-1 0 0;0 -1 0;0 0 -1;1 0 0;0 1 0; 0 0 1; 1 1 1')
 #b = mat('0;0;0;2;2;2;5')
 #2D example - 5 equations
-A = mat('1 0;0 1;-1 0;0 -1;-1 -1')
-b = mat('200;170;-100;-80;-200')
+#A = mat('1 0;0 1;-1 0;0 -1;-1 -1')
+#b = mat('200;170;-100;-80;-200')
 
-c = linalg.lstsq(A,b)[0]
-b = b-A*c
-D = A / matlib.repmat(b,1,A.shape[1])
-Dtest = vstack((D,zeros([1,D.shape[1]])))
-
+def con2vert(A,b):
+	c = linalg.lstsq(A,b)[0]
+	b = b-A*c
+	D = A / matlib.repmat(b,1,A.shape[1])
+	Dtest = vstack((D,zeros([1,D.shape[1]])))
 
 #== Volume error check ==
-genfile(Dtest)
-qhullp = subprocess.Popen('qhull FA < qhullin', shell=True, stdout=subprocess.PIPE) #calc summary and volume
-Vc = qhullp.communicate()[0] #qhull output to Vc
-ks = Vc.split('\n')[-3]
-VolDt = float(ks.split(' ')[-1]) #get volume of D-hull
+	genfile(Dtest)
+	qhullp = subprocess.Popen('qhull FA < qhullin', shell=True, stdout=subprocess.PIPE) #calc summary and volume
+	Vc = qhullp.communicate()[0] #qhull output to Vc
+	ks = Vc.split('\n')[-3]
+	VolDt = float(ks.split(' ')[-1]) #get volume of D-hull
 
-genfile(D)
-qhullp = subprocess.Popen('qhull FA < qhullin', shell=True, stdout=subprocess.PIPE) #calc summary and volume
-Vc = qhullp.communicate()[0] #qhull output to Vc
-ks = Vc.split('\n')[-3]
-VolD = float(ks.split(' ')[-1]) #get volume of D-hull
+	genfile(D)
+	qhullp = subprocess.Popen('qhull FA < qhullin', shell=True, stdout=subprocess.PIPE) #calc summary and volume
+	Vc = qhullp.communicate()[0] #qhull output to Vc
+	ks = Vc.split('\n')[-3]
+	VolD = float(ks.split(' ')[-1]) #get volume of D-hull
 
-if VolDt > VolD:
-	print 'error : Non-bounding constraints detected. (Consider box constraints on variables.)'
-	exit(1)
+	if VolDt > VolD:
+		print 'error : Non-bounding constraints detected (consider box constraints on variables). Exiting...'
+		exit(1)
 #== ==
 
-qhullp = subprocess.Popen('qhull Ft < qhullin', shell=True, stdout=subprocess.PIPE) #calc vertices and facets
-Vc = qhullp.communicate()[0] #qhull output to Vc
-ks = Vc.split('\n')
-fms = int(ks[1].split(' ')[1]) #get size of facet matrix
-fmat = ks[-fms-1:-1]
-fmat = mat(join(fmat,';')) #generate matrix
-fmatn = fmat[:,0] #number of points on facets
-fmatv = fmat[:,1:] #vertices on facets
+	qhullp = subprocess.Popen('qhull Ft < qhullin', shell=True, stdout=subprocess.PIPE) #calc vertices and facets
+	Vc = qhullp.communicate()[0] #qhull output to Vc
+	ks = Vc.split('\n')
+	fms = int(ks[1].split(' ')[1]) #get size of facet matrix
+	fmat = ks[-fms-1:-1]
+	fmat = mat(join(fmat,';')) #generate matrix
+	fmatn = fmat[:,0] #number of points on facets
+	fmatv = fmat[:,1:] #vertices on facets
 
-G  = zeros((fmatv.shape[0],D.shape[1]));
-for ix in range(0,fmatv.shape[0]):
-	F = D[fmatv[ix,:],:].squeeze()
-	G[ix,:] = linalg.lstsq(F,ones((F.shape[0],1)))[0].transpose()
+	G  = zeros((fmatv.shape[0],D.shape[1]));
+	for ix in range(0,fmatv.shape[0]):
+		F = D[fmatv[ix,:],:].squeeze()
+		G[ix,:] = linalg.lstsq(F,ones((F.shape[0],1)))[0].transpose()
 
-V = G + matlib.repmat(c.transpose(),G.shape[0],1)
+	V = G + matlib.repmat(c.transpose(),G.shape[0],1)
 
-ux = uniqm(V,0.01)
+	ux = uniqm(V,0.01)
 
-print ux.round(3)
-remove('qhullin')
+#print ux.round(3)
+	remove('qhullin')
+	return ux
 
 #TODO =====
 # error-checking
