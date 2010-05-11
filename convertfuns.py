@@ -4,7 +4,7 @@ from scipy import *
 from numpy import linalg, matlib
 import subprocess #to use qhull
 from gendatafile import *
-from uniqmat import *
+from auxfuns import *
 from os import remove
 from string import join
 from sys import exit

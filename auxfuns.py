@@ -23,6 +23,6 @@ def mat2ab(Asbmat):
     A = Asbmat[:,:-2]
     s = Asbmat[:,-2]
     b = Asbmat[:,-1]
-    A = multiply(A,-s)
-    b = multiply(b,-s)
+    A = numpy.multiply(A,-s)
+    b = numpy.multiply(b,-s)
     return A,s,b
