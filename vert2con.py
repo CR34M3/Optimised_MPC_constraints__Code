@@ -11,7 +11,6 @@
 #		* gendatafile
 
 from scipy import *
-import string
 import subprocess #to use qhull
 from gendatafile import *
 
@@ -82,8 +81,7 @@ def vert2con(V):
 
 	qhullp = subprocess.Popen('qhull n < qhullin', shell=True, stdout=subprocess.PIPE) #calc convex hull and get normals
 	Vc = qhullp.communicate()[0] #qhull output to Vc
-	ks = Vc.split('\n')
-	ks = string.join(ks[2:],';') #remove leading dimension output
+	ks = ';'.join(Vc.split('\n')[2:]) #remove leading dimension output
 	k = mat(ks[:-1]) #convert to martrix with vertices
 
 # k is a (n+1)x(p) matrix in the form [A b] (from qhull doc: Ax < -b is satisfied), thus;
