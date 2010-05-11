@@ -8,20 +8,12 @@
 #
 # Author: Andre Campher
 
-from scipy import vstack,zeros
-from numpy import all as nall
+from scipy import zeros
+import numpy
 
 def uniqm(A,t):
-	B = zeros((1,A.shape[1]))
-	for r1 in range(0,A.shape[0]):
-		dup = False
-		row = A[r1,:]
-		for r2 in range(r1+1,A.shape[0]):
-			rowt = A[r2,:]
-			if nall(abs(row-rowt)<t):
-				dup = True #is duplicate
-				break
-		if not dup:
-			B = vstack((B,row))
-	B = B[1:,:]
-	return B
+	Nrows = A.shape[0]
+	uniquerows = [r1 for r1 in range(Nrows)
+		      if not all(numpy.all(abs(A[r1,:]-A[r2,:])<t)
+				 for r2 in range(r1+1,Nrows))] 
+	return A[uniquerows,:].copy()
