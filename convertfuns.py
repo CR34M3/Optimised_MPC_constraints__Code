@@ -6,7 +6,6 @@ import subprocess #to use qhull
 from gendatafile import *
 from auxfuns import *
 from os import remove
-from string import join
 from sys import exit
 
 # vert2con ====================================================================================================
@@ -73,7 +72,7 @@ def con2vert(A,b):
     ks = Vc.split('\n')
     fms = int(ks[1].split(' ')[1]) #get size of facet matrix
     fmat = ks[-fms-1:-1]
-    fmat = mat(join(fmat,';')) #generate matrix
+    fmat = mat(';'.join(fmat)) #generate matrix
     fmatn = fmat[:,0] #number of points on facets
     fmatv = fmat[:,1:] #vertices on facets
 
@@ -83,7 +82,6 @@ def con2vert(A,b):
         G[ix,:] = linalg.lstsq(F,ones((F.shape[0],1)))[0].transpose()
 
     V = G + matlib.repmat(c.transpose(),G.shape[0],1)
-
     ux = uniqm(V,0.01)
 
     remove('qhullin')

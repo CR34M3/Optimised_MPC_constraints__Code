@@ -8,7 +8,6 @@
 # Author: Andre Campher
 
 def genfile(V):
-    from string import join
 # generate data file for qhull
 # format:
 # n //dimensions (columns of V)
@@ -20,6 +19,6 @@ def genfile(V):
     for row in range(0,V.shape[0]):
         stringmat = ""
         for col in range(0,V.shape[1]):
-            stringmat = join([stringmat,str(V[row,col])]," ")
+            stringmat = " ".join([stringmat,str(V[row,col])])
         infile.write(stringmat+"\n")
     infile.close()
