@@ -3,7 +3,7 @@
 from scipy import zeros
 import numpy
 
-def uniqm(A,t):
+def uniqm(A,t=0.01):
     """
     Return input matrix with duplicate entries removed.
      A - [matrix] input matrix (possibly containing duplicates)
@@ -27,3 +27,7 @@ def mat2ab(Asbmat):
     A = numpy.multiply(A,-s)
     b = numpy.multiply(b,-s)
     return A,s,b
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testfile("auxfunstests.txt")

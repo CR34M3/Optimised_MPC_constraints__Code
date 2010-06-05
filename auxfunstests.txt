@@ -1,0 +1,61 @@
+Tests For The ``auxfuns`` Module
+================================
+Import the functions from the ``auxfuns`` module.
+    >>> from auxfuns import uniqm,mat2ab
+
+Import ``mat`` from the ``scipy`` module to supply test matrices.
+    >>> from scipy import mat,vstack
+
+Function-specific tests are included in the sections below.
+
+Using ``uniqm``
+---------------
+uniqm-test-1
+''''''''''''
+Standard test for removal of duplicates
+    >>> a = mat('1; 2; 3; 3; 4; 4; 5; 6; 7; 8; 8; 9; 0; 1; 2; 3; 4')    
+    >>> uniqm(a)
+    matrix([[5],
+            [6],
+            [7],
+            [8],
+            [9],
+            [0],
+            [1],
+            [2],
+            [3],
+            [4]])
+
+uniqm-test-2
+''''''''''''
+Test for removal of duplicates in higher dimensions
+    >>> b = mat('1 1; 2 2; 3 5; 8 2; 4 5; 8 0; 5 3; 8 2; 0 0; 0 0; 1 1; 5 3; 2 8')
+    >>> uniqm(b)
+    matrix([[2, 2],
+            [3, 5],
+            [4, 5],
+            [8, 0],
+            [8, 2],
+            [0, 0],
+            [1, 1],
+            [5, 3],
+            [2, 8]])
+
+uniqm-test-3
+''''''''''''
+Test for passing of tolerance
+    >>> b2 = b-0.01
+    >>> bb = vstack((b,b2))
+    >>> uniqm(bb,0.5)
+    matrix([[ 1.99,  1.99],
+            [ 2.99,  4.99],
+            [ 3.99,  4.99],
+            [ 7.99, -0.01],
+            [ 7.99,  1.99],
+            [-0.01, -0.01],
+            [ 0.99,  0.99],
+            [ 4.99,  2.99],
+            [ 1.99,  7.99]])
+
+Using  ``mat2ab``
+-----------------
