@@ -30,4 +30,4 @@ def mat2ab(Asbmat):
 
 if __name__ == "__main__":
     import doctest
-    doctest.testfile("auxfunstests.txt")
+    doctest.testfile("tests/auxfunstests.txt")
