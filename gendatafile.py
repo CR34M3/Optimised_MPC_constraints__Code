@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-
-# gendatafile.py
-# Generate data file for qhull process
-#    INPUT:  V - matrix
-#    OUTPUT: qhullin - plaintext file with matrix (A) data  [file is saved]
-#
+"""Functions to generate and manipulate data files needed for qhull process."""
 # Author: Andre Campher
 
 def genfile(V):
+    """
+    Generate data file for qhull process and save as plaintext file.
+     V - [matrix] vertices to be put in data file
+    """
 # generate data file for qhull
 # format:
 # n //dimensions (columns of V)

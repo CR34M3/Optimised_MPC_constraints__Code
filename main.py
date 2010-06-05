@@ -1,11 +1,8 @@
 #!/usr/bin/env python
-
-# main.py
-# Main file for M Project (Optimised MPC Constraints)
-#
-# Author: Andre Campher
-# 2010-04-27
-#
+"""
+Main file for M Project (Optimised MPC Constraints).
+Author: Andre Campher
+"""
 # Dependencies: - SciPy
 #               - convertfuns
 #               - auxfuns
