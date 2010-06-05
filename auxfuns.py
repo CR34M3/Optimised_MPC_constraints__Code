@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-
+"""Auxiliary functions to manipulate data-types and and change data-formats."""
 from scipy import zeros
 import numpy
 
-# uniqm ====================================================================================================
-# Removes duplicate entries from a matrix
-#    INPUT:  A - matrix (possibly containing duplicates)
-#            t - tolerance (float) [positive]
-#    OUTPUT: matrix (A with the duplicates removed)
 def uniqm(A,t):
+    """
+    Return input matrix with duplicate entries removed.
+     A - [matrix] input matrix (possibly containing duplicates)
+     t - [float]  tolerance (default=0.01)
+    """
     Nrows = A.shape[0]
     uniquerows = [r1 for r1 in range(Nrows)
               if not any(numpy.all(abs(A[r1,:]-A[r2,:])<t)
@@ -16,10 +16,11 @@ def uniqm(A,t):
     return A[uniquerows,:].copy()
 
 
-# mat2ab ====================================================================================================
-# Transform to standard Ax<b notation using sign vector
-#    INPUT: Asbmat - inequality matrix in the form Ax<b, matrix = [A s b] with s the sign vector [1:>, -1:<]
 def mat2ab(Asbmat):
+    """
+    Transform [A s b]-form matrix to standard Ax<b notation.
+     Asbmat - [matrix] inequality matrix in the form Ax<b, matrix = [A s b] with s the sign vector [1:>, -1:<]
+    """    
     A = Asbmat[:,:-2]
     s = Asbmat[:,-2]
     b = Asbmat[:,-1]
