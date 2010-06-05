@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+"""Functions to calculate vertices from constraints and vice versa."""
 from scipy import *
 from numpy import linalg, matlib
 import subprocess #to use qhull
@@ -8,14 +8,14 @@ from auxfuns import *
 from os import remove
 from sys import exit
 
-# vert2con ====================================================================================================
-# Converts sets of vertices to a list of constraints (of the feasible region)
-# Output, A,b and s of the set;  Ax < b   (s is the sign-vector [to be used later])
-#
-# Dependencies: * qhull (libqhull5, qhull-bin)
-#               * scipy
-#               * gendatafile
 def vert2con(V):
+    """
+    Convert sets of vertices to a list of constraints (of the feasible region).
+    Return A, b and s of the set;  Ax < b   (s is the sign-vector [to be used later])
+    """
+    # Dependencies: * qhull (libqhull5, qhull-bin)
+    #               * scipy
+    #               * gendatafile
     genfile(V)
 # subprocess.call(["function","arguments"]) or subprocess.Popen('function expression', shell=True)
 # run qhull with: qhull < data or cat data | qhull
@@ -31,19 +31,17 @@ def vert2con(V):
     remove('qhullin')
     return A,s,b
 
-# con2vert ====================================================================================================
-# Python implementation of con2vert.m by Michael Kleder (July 2005),
-#  available: http://www.mathworks.com/matlabcentral/fileexchange/7894-con2vert-constraints-to-vertices
-# Converts sets of constraints to a list of vertices (of the feasible region)
-#
-# Author: Michael Kelder (Original)
-#         Andre Campher (Python implementation)
-#
-# Dependencies : - Scipy
-#         - Numpy
-#         - gendatafile
-#         - uniqmat
 def con2vert(A,b):
+    """Convert sets of constraints to a list of vertices (of the feasible region)."""
+    # Python implementation of con2vert.m by Michael Kleder (July 2005),
+    #  available: http://www.mathworks.com/matlabcentral/fileexchange/7894-con2vert-constraints-to-vertices
+    # Author: Michael Kelder (Original)
+    #         Andre Campher (Python implementation)
+    #
+    # Dependencies : - Scipy
+    #         - Numpy
+    #         - gendatafile
+    #         - uniqmat
     c = linalg.lstsq(A,b)[0]
     b = b-A*c
     D = A / matlib.repmat(b,1,A.shape[1])
