@@ -1,0 +1,61 @@
+Tests For The ``convertfuns`` Module
+====================================
+Import the functions from the ``convertfuns`` module.
+    >>> from convertfuns import *
+
+Import ``mat`` from the ``scipy`` module to supply test matrices.
+    >>> from scipy import mat
+
+Import ``round`` from the ``numpy`` module for testing
+    >>> from numpy import round as nround
+
+Function-specific tests are included in the sections below.
+
+Using ``vert2con``
+------------------
+vert2con-test-1
+'''''''''''''''
+General test for functionality.
+Supply test vertices, V.
+    >>> V = mat('0 0 0;0 0 2;0 2 0;0 2 2; 2 0 0;2 0 2;2 1 2;1 2 2; 2 2 0;2 2 1')
+    >>> vert2con(V)
+    (matrix([[ 0.        ,  0.        , -1.        ],
+            [ 0.        , -1.        ,  0.        ],
+            [-1.        ,  0.        ,  0.        ],
+            [ 0.        ,  0.        ,  1.        ],
+            [ 0.57735027,  0.57735027,  0.57735027],
+            [ 1.        ,  0.        ,  0.        ],
+            [ 0.        ,  1.        ,  0.        ]]), array([[-1.],
+           [-1.],
+           [-1.],
+           [-1.],
+           [-1.],
+           [-1.],
+           [-1.]]), matrix([[-0.        ],
+            [-0.        ],
+            [-0.        ],
+            [ 2.        ],
+            [ 2.88675135],
+            [ 2.        ],
+            [ 2.        ]]))
+
+Using  ``con2vert``
+-------------------
+con2vert-test-1
+'''''''''''''''
+General test for functionality.
+Supply test matrix in the form A < b
+    >>> A = mat('-1 0 0; 0 -1 0; 0 0 -1;1 0 0;0 1 0;0 0 1;1 1 1')
+    >>> b = mat('0;0;0;2;2;2;5')
+    >>> x = con2vert(A,b)
+    >>> nround(x)
+    matrix([[ 0.,  2.,  2.],
+            [ 2.,  2.,  1.],
+            [ 2.,  1.,  2.],
+            [ 1.,  2.,  2.],
+            [-0.,  2., -0.],
+            [ 2.,  2.,  0.],
+            [ 2.,  0.,  2.],
+            [ 0.,  0.,  2.],
+            [ 0.,  0.,  0.],
+            [ 2.,  0.,  0.]])

@@ -85,6 +85,12 @@ def con2vert(A,b):
     remove('qhullin')
     return ux
 
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testfile("tests/convertfunstests.txt")
+
 #TODO con2vert =====
 # error-checking
 #    - fix volume check (for redundant constraints)
