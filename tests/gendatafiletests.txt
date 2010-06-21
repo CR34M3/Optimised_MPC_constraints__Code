@@ -1,0 +1,38 @@
+Tests For The ``gendatafile`` Module
+====================================
+Import the functions from the ``gendatafile`` module.
+    >>> from gendatafile import *
+
+Import ``mat`` from the ``scipy`` module to supply test matrices.
+    >>> from scipy import mat
+
+Import ``path`` from the ``os`` module to test file's existance.
+    >>> import os.path
+
+Function-specific tests are included in the sections below.
+
+Using ``genfile``
+-----------------
+genfile-test-1
+''''''''''''''
+General test for functionality.
+Supply test matrix, V.
+    >>> V = mat('0 0 0;0 0 2;0 2 0;0 2 2; 2 0 0;2 0 2;2 1 2;1 2 2; 2 2 0;2 2 1')
+    >>> os.path.exists('qhullin')
+    True
+    >>> filehandle = open('qhullin','r')
+    >>> print filehandle.read()
+    3
+    10
+     0 0 0
+     0 0 2
+     0 2 0
+     0 2 2
+     2 0 0
+     2 0 2
+     2 1 2
+     1 2 2
+     2 2 0
+     2 2 1
+    <BLANKLINE>     
+    >>> filehandle.close()

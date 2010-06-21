@@ -21,3 +21,9 @@ def genfile(V):
             stringmat = " ".join([stringmat,str(V[row,col])])
         infile.write(stringmat+"\n")
     infile.close()
+
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testfile("tests/gendatafiletests.txt")
