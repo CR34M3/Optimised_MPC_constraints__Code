@@ -29,7 +29,7 @@ def vert2con(V):
     s = -ones([k.shape[0],1])
 
     remove('qhullin')
-    return A,s,b
+    return mat(A,s,b)
 
 def con2vert(A,b):
     """Convert sets of constraints to a list of vertices (of the feasible region)."""

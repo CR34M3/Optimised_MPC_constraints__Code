@@ -5,9 +5,11 @@ Author: Andre Campher
 """
 # Dependencies: - convertfuns
 #               - auxfuns
+#               - SciPy
 
 from auxfuns import mat2ab
 from convertfuns import *
+from scipy import *
 
 class conset:
     def __init__(self,conmatrix):
@@ -18,13 +20,13 @@ class conset:
         self.vert = con2vert(self.A,self.b)
         
     def outconlin(self,model):
-        """Convert constraints to ouput space using a linear model"""       
+        """Convert constraints to output space using a linear model"""       
         # calc AOS (from G and AIS)
         verttemp = empty([1,self.vert.shape[1]])
         for v in self.vert:
             x = model*v.transpose()
             outverttemp = vstack((outverttemp,x.transpose()))
-        return outverttemp[1:,:] #remove first line of junk data from outverttemp
+        return vert2con(outverttemp[1:,:]) #remove first line of junk data from outverttemp and convert
     
     def intersect(self,conset2):
         """Determine intersection between current constraint set and another"""
