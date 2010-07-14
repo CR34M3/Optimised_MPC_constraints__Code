@@ -22,7 +22,7 @@ class conset:
     def outconlin(self,model):
         """Convert constraints to output space using a linear model"""       
         # calc AOS (from G and AIS)
-        verttemp = empty([1,self.vert.shape[1]])
+        outverttemp = empty([1,self.vert.shape[1]])
         for v in self.vert:
             x = model*v.transpose()
             outverttemp = vstack((outverttemp,x.transpose()))
