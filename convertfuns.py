@@ -85,7 +85,14 @@ def con2vert(A,b):
     remove('qhullin')
     return ux
 
-
+def con2lincon(cset):
+    """Convert a set of constraints to linear combinations of the core variables with high/low limits."""
+    #Take cset as input
+    #Determine number of variables
+    #Determine normals of constraint-facets
+    #Determine 'directions' of normals
+    #Express cset as combination of linear inequalities with high/low limits
+    
 
 if __name__ == "__main__":
     import doctest
