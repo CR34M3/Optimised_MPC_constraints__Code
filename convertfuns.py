@@ -85,19 +85,29 @@ def con2vert(A,b):
     remove('qhullin')
     return ux
 
-def con2lincon(cset):
+def con2lincon():
     """Convert a set of constraints to linear combinations of the core variables with high/low limits."""
     #Take cset as input
+    Vx = mat('1 1; 1 2; 2 1')
+    Cx = vert2con(Vx)
     #Determine number of variables
+    ###nvar = cset.A.size[1]
     #Determine normals of constraint-facets
+    ###genfile(cset.vert)
+    genfile(Vx)
+    qhullp = subprocess.Popen('qhull n < qhullin', shell=True, stdout=subprocess.PIPE) #calc convex hull and get normals
+    Vc = qhullp.communicate()[0]
+    print Vc
+    print Cx
     #Determine 'directions' of normals
     #Express cset as combination of linear inequalities with high/low limits
     
 
 if __name__ == "__main__":
-    import doctest
-    doctest.testfile("tests/convertfunstests.txt")
-
+#    import doctest
+#    doctest.testfile("tests/convertfunstests.txt")
+    con2lincon()
+    
 #TODO con2vert =====
 # error-checking
 #    - fix volume check (for redundant constraints)
