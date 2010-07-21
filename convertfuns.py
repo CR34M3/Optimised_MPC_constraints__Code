@@ -46,6 +46,9 @@ def con2vert(A,b):
     b = b-A*c
     D = A / matlib.repmat(b,1,A.shape[1])
     Dtest = vstack((D,zeros([1,D.shape[1]])))
+    print D
+    print c
+    print b
 
 #== Volume error check ==
     genfile(Dtest)
@@ -85,29 +88,47 @@ def con2vert(A,b):
     remove('qhullin')
     return ux
 
-def con2lincon():
-    """Convert a set of constraints to linear combinations of the core variables with high/low limits."""
-    #Take cset as input
-    Vx = mat('1 1; 1 2; 2 1')
-    Cx = vert2con(Vx)
-    #Determine number of variables
-    ###nvar = cset.A.size[1]
-    #Determine normals of constraint-facets
-    ###genfile(cset.vert)
-    genfile(Vx)
-    qhullp = subprocess.Popen('qhull n < qhullin', shell=True, stdout=subprocess.PIPE) #calc convex hull and get normals
-    Vc = qhullp.communicate()[0]
-    print Vc
-    print Cx
-    #Determine 'directions' of normals
+def con2pscon(A,s,b):
+    """Convert a set of constraints to a set of pseudo constraints using only high/low limits."""
+    #Take Asb matrix as input
+    #Determine necessary conversions
+    ###Check for single row entries (and ignore)
+    checkmat = zeros((1,A.shape[1]))
+    tempcvmat = zeros((0,A.shape[1]))
+    tempA = zeros((0,A.shape[1]))
+    tempsb = zeros((0,2))
+    origA = zeros((0,A.shape[1]))
+    origsb = zeros((0,2))
+    nconv = 0
+    for r in range(0,A.shape[0]):
+        if sum(A[r,:]==checkmat) < A.shape[1]-1:  #if less than n-1 zeros, convert
+            nconv = nconv + 1 #flag as conversion
+            tempA = vstack((tempA,A[r,:]))
+            tempsb = vstack((tempsb,hstack((s[r],b[r]/abs(b[r]))))) #normalise b
+            tempcvmat = vstack((tempcvmat,A[r,:]/abs(b[r]))) #add to tempcvmat
+        else:                                #if n-1 zeros, just build
+            origA = vstack((origA,A[r,:])) #keep values and positions
+            origsb = vstack((origsb,hstack((s[r],b[r]))))
+    if nconv>0:
+        padcol = zeros((origA.shape[0],nconv))
+        padrow = zeros((nconv,origA.shape[1]))
+        padvar = eye(nconv)
+        psA = vstack((hstack((origA,padcol)),hstack((padrow,padvar))))
+        pssb = vstack((origsb,tempsb))
+        convertmat = vstack((ones((A.shape[0]-nconv,A.shape[1])),tempcvmat))
+        return hstack([psA,pssb]),convertmat
+    else:   #if no conversions were made
+        return hstack([A,s,b]),ones(A.shape)
     #Express cset as combination of linear inequalities with high/low limits
     
 
 if __name__ == "__main__":
-#    import doctest
-#    doctest.testfile("tests/convertfunstests.txt")
-    con2lincon()
+    import doctest
+    doctest.testfile("tests/convertfunstests.txt")
+    
     
 #TODO con2vert =====
 # error-checking
 #    - fix volume check (for redundant constraints)
+#TODO general
+# check that floating-point math is used

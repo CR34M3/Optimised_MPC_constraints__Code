@@ -18,6 +18,7 @@ class conset:
         self.s = asb[1]
         self.b = asb[2]
         self.vert = con2vert(self.A,self.b)
+        self.cons = conmatrix
         
     def outconlin(self,model):
         """Convert constraints to output space using a linear model"""       
