@@ -13,10 +13,7 @@ from scipy import *
 
 class conset:
     def __init__(self,conmatrix):
-        asb = mat2ab(conmatrix)
-        self.A = asb[0]
-        self.s = asb[1]
-        self.b = asb[2]
+        self.A, self.s, self.b = mat2ab(conmatrix)
         self.vert = con2vert(self.A,self.b)
         
     def outconlin(self,model):
