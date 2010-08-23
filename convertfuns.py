@@ -16,19 +16,11 @@ def vert2con(V):
     # Dependencies: * qhull (libqhull5, qhull-bin)
     #               * scipy
     #               * gendatafile
-    genfile(V)
-# subprocess.call(["function","arguments"]) or subprocess.Popen('function expression', shell=True)
-# run qhull with: qhull < data or cat data | qhull
-    qhullp = subprocess.Popen('qhull n < qhullin', shell=True, stdout=subprocess.PIPE) #calc convex hull and get normals
-    Vc = qhullp.communicate()[0] #qhull output to Vc
-    ks = ';'.join(Vc.split('\n')[2:]) #remove leading dimension output
-    k = mat(ks[:-1]) #convert to martrix with vertices
-# k is a (n+1)x(p) matrix in the form [A b] (from qhull doc: Ax < -b is satisfied), thus;
+    k = qhull(V,"n") #convert to martrix with vertices
+    # k is a (n+1)x(p) matrix in the form [A b] (from qhull doc: Ax < -b is satisfied), thus;
     A = k[:,:-1]
     b = -k[:,-1]
     s = -ones([k.shape[0],1])
-
-    remove('qhullin')
     return hstack([A,s,b])
 
 def con2vert(A,b):
@@ -51,31 +43,15 @@ def con2vert(A,b):
     print b
 
 #== Volume error check ==
-    genfile(Dtest)
-    qhullp = subprocess.Popen('qhull FA < qhullin', shell=True, stdout=subprocess.PIPE) #calc summary and volume
-    Vc = qhullp.communicate()[0] #qhull output to Vc
-    ks = Vc.split('\n')[-3]
-    VolDt = float(ks.split(' ')[-1]) #get volume of D-hull
-
-    genfile(D)
-    qhullp = subprocess.Popen('qhull FA < qhullin', shell=True, stdout=subprocess.PIPE) #calc summary and volume
-    Vc = qhullp.communicate()[0] #qhull output to Vc
-    ks = Vc.split('\n')[-3]
-    VolD = float(ks.split(' ')[-1]) #get volume of D-hull
+    VolDt = qhull(Dtest,"FA") #get volume of D-hull
+    VolD = qhull(D,"FA") #get volume of D-hull
 
     if VolDt > VolD:
         print 'error : Non-bounding constraints detected (consider box constraints on variables). Exiting...'
         exit(1)
 #== ==
 
-    qhullp = subprocess.Popen('qhull Ft < qhullin', shell=True, stdout=subprocess.PIPE) #calc vertices and facets
-    Vc = qhullp.communicate()[0] #qhull output to Vc
-    ks = Vc.split('\n')
-    fms = int(ks[1].split(' ')[1]) #get size of facet matrix
-    fmat = ks[-fms-1:-1]
-    fmat = mat(';'.join(fmat)) #generate matrix
-    fmatn = fmat[:,0] #number of points on facets
-    fmatv = fmat[:,1:] #vertices on facets
+    fmatv = qhull(D,"Ft") #vertices on facets
 
     G  = zeros((fmatv.shape[0],D.shape[1]));
     for ix in range(0,fmatv.shape[0]):
@@ -85,7 +61,6 @@ def con2vert(A,b):
     V = G + matlib.repmat(c.transpose(),G.shape[0],1)
     ux = uniqm(V,0.01)
 
-    remove('qhullin')
     return ux
 
 def con2pscon(A,s,b):

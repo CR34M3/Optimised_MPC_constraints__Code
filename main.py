@@ -15,12 +15,12 @@ from scipy import mat
 
 # define AIS and DOS (equations : Ax<b)
 # equations in the form Ax<b, matrix = [A s b] with s the sign vector [1:>, -1:<]
-AIS = conset(mat('1 0  1 -1;\
+AIS = conset(mat('1. 0  1 -1;\
                   1 0 -1  1;\
                   0 1  1 -1;\
                   0 1 -1  1')) 
 
-DOS = conset(mat('1 0  1 -1;\
+DOS = conset(mat('1. 0  1 -1;\
                   1 0 -1  1;\
                   0 1  1 -1;\
                   0 1 -1  1'))

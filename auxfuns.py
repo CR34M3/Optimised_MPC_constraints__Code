@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 """Auxiliary functions to manipulate data-types and and change data-formats."""
-from scipy import zeros
+from scipy import zeros,mat
 from gendatafile import *
 import numpy
 from os import remove
 import subprocess #to use qhull
-
-from scipy import mat
 
 def uniqm(A,t=0.01):
     """
@@ -39,6 +37,8 @@ def qhull(V,qstring):
      V - [matrix] vertices
      qstring - [string] arguments to pass to qhull
     """
+    # subprocess.call(["function","arguments"]) or subprocess.Popen('function expression', shell=True)
+    # run qhull with: qhull < data or cat data | qhull
     filename = genfile(V)
     qstringfull = "qhull " + qstring + " < " + filename
     qhullp = subprocess.Popen(qstringfull, shell=True, stdout=subprocess.PIPE) #calc convex hull and get normals
@@ -62,10 +62,11 @@ def qhull(V,qstring):
         k = mat(ks[:-1]) #convert to martrix with vertices
         return k
     else:
-        nothing
+        exit(1)
 
 if __name__ == "__main__":
-#    import doctest
-#    doctest.testfile("tests/auxfunstests.txt")
-    vtest = mat("0 0; 1 1; 0 1; 1 0")
-    print qhull(vtest,"Ft")
+    import doctest
+    doctest.testfile("tests/auxfunstests.txt")
+    
+#TODO - auxfuns
+# qhull error handling   
