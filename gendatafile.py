@@ -2,6 +2,8 @@
 """Functions to generate and manipulate data files needed for qhull process."""
 # Author: Andre Campher
 
+import tempfile
+
 def genfile(V):
     """
     Generate data file for qhull process and save as plaintext file.
@@ -12,8 +14,8 @@ def genfile(V):
 # n //dimensions (columns of V)
 # p //number of points (rows of V)
 # v //points e.g. 1 3 12 \n 2 4 5
-
-    infile = open("qhullin",'w') #generate input file
+    filename = tempfile.mkstemp()[1]
+    infile = open(filename,'w') #generate input file
     infile.write(str(V.shape[1])+"\n"+str(V.shape[0])+"\n")
     for row in range(0,V.shape[0]):
         stringmat = ""
@@ -21,7 +23,7 @@ def genfile(V):
             stringmat = " ".join([stringmat,str(V[row,col])])
         infile.write(stringmat+"\n")
     infile.close()
-
+    return filename
 
 
 if __name__ == "__main__":

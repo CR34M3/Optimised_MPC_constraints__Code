@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 """Auxiliary functions to manipulate data-types and and change data-formats."""
 from scipy import zeros
+from gendatafile import *
 import numpy
+from os import remove
+import subprocess #to use qhull
+
+from scipy import mat
 
 def uniqm(A,t=0.01):
     """
@@ -28,6 +33,39 @@ def mat2ab(Asbmat):
     b = numpy.multiply(b,-s)
     return A,s,b
 
+def qhull(V,qstring):
+    """
+    Use qhull to determine convex hull / volume / normals.
+     V - [matrix] vertices
+     qstring - [string] arguments to pass to qhull
+    """
+    filename = genfile(V)
+    qstringfull = "qhull " + qstring + " < " + filename
+    qhullp = subprocess.Popen(qstringfull, shell=True, stdout=subprocess.PIPE) #calc convex hull and get normals
+    Vc = qhullp.communicate()[0] #qhull output to Vc
+    remove(filename)
+        
+    if qstring == "FA": #calc summary and volume
+        ks = Vc.split('\n')[-3]
+        Vol = float(ks.split(' ')[-1]) #get volume of D-hull
+        return Vol
+    if qstring == "Ft": #calc vertices and facets
+        ks = Vc.split('\n')
+        fms = int(ks[1].split(' ')[1]) #get size of facet matrix
+        fmat = ks[-fms-1:-1]
+        fmat = mat(';'.join(fmat)) #generate matrix
+        fmatn = fmat[:,0] #number of points on facets
+        fmatv = fmat[:,1:] #vertices on facets
+        return fmatv
+    if qstring == "n": #calc convex hull and get normals
+        ks = ';'.join(Vc.split('\n')[2:]) #remove leading dimension output
+        k = mat(ks[:-1]) #convert to martrix with vertices
+        return k
+    else:
+        nothing
+
 if __name__ == "__main__":
-    import doctest
-    doctest.testfile("tests/auxfunstests.txt")
+#    import doctest
+#    doctest.testfile("tests/auxfunstests.txt")
+    vtest = mat("0 0; 1 1; 0 1; 1 0")
+    print qhull(vtest,"Ft")
