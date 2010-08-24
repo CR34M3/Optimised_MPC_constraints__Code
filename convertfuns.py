@@ -38,9 +38,6 @@ def con2vert(A,b):
     b = b-A*c
     D = A / matlib.repmat(b,1,A.shape[1])
     Dtest = vstack((D,zeros([1,D.shape[1]])))
-    print D
-    print c
-    print b
 
 #== Volume error check ==
     VolDt = qhull(Dtest,"FA") #get volume of D-hull

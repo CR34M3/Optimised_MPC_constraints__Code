@@ -14,6 +14,7 @@ from scipy import *
 class conset:
     def __init__(self,conmatrix):
         self.A, self.s, self.b = mat2ab(conmatrix)
+        self.nd = self.A.shape[1]
         self.vert = con2vert(self.A,self.b)
         self.cons = conmatrix
         
