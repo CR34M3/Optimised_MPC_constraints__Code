@@ -63,39 +63,6 @@ def qhull(V,qstring):
         return k
     else:
         exit(1)
-
-def fitshape(cset,ncon):
-    """
-    Fit a constraint set (specified by the number of constraints) within an existing
-    constraint set.
-     cset - [conset] existing constraint set
-     ncon - [int] number of constraints to fit
-    """
-#### State problem
-   # ncongiven > ncon >= nD+1
-   # (current dirty method - specify edges as x*dimensions)
-   # subject to
-    # Using the Euler characteristic for spherical polyhedra: V-E+F = 2 (check dimensions)
-    # Within constraint set
-#### Define parameters
-    nv = 2 - ncon + (ceil(ncon/cset.nd)*cset.nd) #determine number of vertices (noting E > F)
-    sp = cset.vert[0:nnv,:] #use the first nv vertices (of initial space) as starting points
-#### Objective fn
-    def objfn(V,*args):
-        shapevol = args[0]
-        return shapevol - qhull(V,"FA")
-    def ieconsfn(V,*args):
-        initcset = args[1]
-        tmpV = zeros((V.shape[0]*initcset.A.shape[0],V.shape[1])) #temp V matrix for all inequalities
-        #convert to standard form (all s = -1)
-        initcset.A = multiply(initcset.A,-1*initcset.s)
-        initcset.b = multiply(initcset.b,-1*initcset.s)
-        tmpA = tile(initcset.A,(V.shape[0],1))
-        tmpb = tile(initcset.b,(V.shape[0],1))
-        #newvertcons = initcset*
-        return newvertcons
-#### Maximise volume
-    sol = optimize.fmin_slsqp(objfn,sp,f_ieqcon=[])
     
 
 if __name__ == "__main__":
