@@ -7,7 +7,7 @@ Author: Andre Campher
 #               - auxfuns
 #               - SciPy
 
-from auxfuns import mat2ab
+from auxfuns import mat2ab, qhull
 from convertfuns import *
 from scipy import *
 
@@ -17,6 +17,7 @@ class conset:
         self.nd = self.A.shape[1]
         self.vert = con2vert(self.A,self.b)
         self.cons = conmatrix
+        self.vol = qhull(self.vert,"FA")
         
     def outconlin(self,model):
         """Convert constraints to output space using a linear model"""       

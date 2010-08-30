@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Auxiliary functions to manipulate data-types and and change data-formats."""
-from scipy import zeros,mat,optimize,ceil,tile,multiply
+from scipy import zeros,mat,optimize,ceil,tile,multiply,vstack
 from gendatafile import *
 import numpy
 from os import remove
@@ -22,7 +22,8 @@ def uniqm(A,t=0.01):
 def mat2ab(Asbmat):
     """
     Transform [A s b]-form matrix to standard Ax<b notation.
-     Asbmat - [matrix] inequality matrix in the form Ax<b, matrix = [A s b] with s the sign vector [1:>, -1:<]
+     Asbmat - [matrix] inequality matrix in the form Ax<b, matrix = [A s b] 
+                        with s the sign vector [1:>, -1:<]
     """    
     A = Asbmat[:,:-2]
     s = Asbmat[:,-2]
@@ -72,31 +73,46 @@ def fitshape(cset,ncon):
      cset - [conset] existing constraint set
      ncon - [int] number of constraints to fit
     """
+    from convertfuns import con2vert
 #### State problem
    # ncongiven > ncon >= nD+1
    # subject to
-    # Within constraint set
+    # Constraints are bounding
+    # All vertices within constraint set
 #### Define parameters
+#    sp = #starting point - combined Ab matrix to optimise
 #### Objective fn
-    def objfn(V,*args):
-        shapevol = args[0]
-        return shapevol - qhull(V,"FA")
-    def ieconsfn(V,*args):
-        initcset = args[1]
-        tmpV = zeros((V.shape[0]*initcset.A.shape[0],V.shape[1])) #temp V matrix for all inequalities
-        #convert to standard form (all s = -1)
-        initcset.A = multiply(initcset.A,-1*initcset.s)
-        initcset.b = multiply(initcset.b,-1*initcset.s)
-        tmpA = tile(initcset.A,(V.shape[0],1))
-        tmpb = tile(initcset.b,(V.shape[0],1))
-        #newvertcons = initcset*
-        return newvertcons
+    def objfn(Ab, *args):
+        A = Ab[:,:-1] #split Ab into A and b (assuming all -1 for s)
+        b = Ab[:,-1]
+        initcset = args[0]
+        try:
+            V = con2vert(A,b) # get vertices for constraint set iteration
+        except: #catch unbound shapes
+            #create large box around original shape
+            fixA = vstack((eye(initcset.nd),-eye(initcset.nd)))
+            fixb = vstack((mat([numpy.max(xv) for xv in initcset.vert.transpose()]).transpose(),
+                          -mat([numpy.min(xv) for xv in initcset.vert.transpose()]).transpose()))
+            fA = vstack((fixA,A))
+            fb = vstack((fixb,b))
+            V = con2vert(fA,fb)
+        return 1 - initcset.vol/qhull(V,"FA") #maximise fraction orig vol / new vol 
+#### Constraints    
+    def ieconsfn(Ab,*args):
+        A = Ab[:,:-1] #split Ab into A and b (assuming all -1 for s)
+        b = Ab[:,-1]
+        V = con2vert(A,b).transpose() # get vertices for constraint set iteration
+        initcset = args[0]
+        #constraint checking for vertices
+        return -(initcset.A*V - initcset.b) #negative as to make valid entries > 0
+    
 #### Maximise volume
-#    sol = optimize.fmin_slsqp(objfn,sp,f_ieqcon=[])    
+    return optimize.fmin_slsqp(objfn,sp,f_ieqcon=ieconsfn,args=cset)
 
 if __name__ == "__main__":
-    import doctest
-    doctest.testfile("tests/auxfunstests.txt")
+#    import doctest
+#    doctest.testfile("tests/auxfunstests.txt")
+        
     
 #TODO - auxfuns
 # qhull error handling   
