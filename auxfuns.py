@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Auxiliary functions to manipulate data-types and and change data-formats."""
-from scipy import zeros,mat,optimize,ceil,tile,multiply,vstack
+from scipy import zeros,mat,optimize,ceil,tile,multiply,vstack,eye,array,hstack
 from gendatafile import *
 import numpy
 from os import remove
@@ -66,7 +66,7 @@ def qhull(V,qstring):
         exit(1)
 
 
-def fitshape(cset,ncon):
+def fitshape(cset,ncon,sp):
     """
     Fit a constraint set (specified by the number of constraints) within an existing
     constraint set.
@@ -81,37 +81,50 @@ def fitshape(cset,ncon):
     # All vertices within constraint set
 #### Define parameters
 #    sp = #starting point - combined Ab matrix to optimise
-#### Objective fn
-    def objfn(Ab, *args):
-        A = Ab[:,:-1] #split Ab into A and b (assuming all -1 for s)
-        b = Ab[:,-1]
-        initcset = args[0]
+#### Helping fns
+    def splitab(inAb,nd):
+        nd1 = nd+1
+        #split Ab into A and b (assuming all -1 for s)
+        Ab = mat(inAb)
+        tempAb = vstack([Ab[:,p*nd1:p*nd1+nd1] for p in range(0,Ab.shape[1]/nd1)])
+        return tempAb[:,:-1], tempAb[:,-1] #return A and b
+    def tryvol(A,b,cs):
         try:
             V = con2vert(A,b) # get vertices for constraint set iteration
         except: #catch unbound shapes
             #create large box around original shape
-            fixA = vstack((eye(initcset.nd),-eye(initcset.nd)))
-            fixb = vstack((mat([numpy.max(xv) for xv in initcset.vert.transpose()]).transpose(),
-                          -mat([numpy.min(xv) for xv in initcset.vert.transpose()]).transpose()))
+            fixA = vstack((eye(cs.nd),-eye(cs.nd)))
+            fixb = vstack((mat([numpy.max(xv) for xv in cs.vert.transpose()]).transpose(),
+                          -mat([numpy.min(xv) for xv in cs.vert.transpose()]).transpose()))
             fA = vstack((fixA,A))
             fb = vstack((fixb,b))
             V = con2vert(fA,fb)
-        return 1 - initcset.vol/qhull(V,"FA") #maximise fraction orig vol / new vol 
+        return qhull(V,"FA"),V #return vol (normal or fixed) and vertices (normal or fixed) 
+#### Objective fn
+    def objfn(Ab,*args):
+        initcset = args[0]
+        A,b = splitab(Ab,initcset.nd)
+        return -tryvol(A,b,initcset)[0] #-volume to minimise 
 #### Constraints    
     def ieconsfn(Ab,*args):
-        A = Ab[:,:-1] #split Ab into A and b (assuming all -1 for s)
-        b = Ab[:,-1]
-        V = con2vert(A,b).transpose() # get vertices for constraint set iteration
         initcset = args[0]
+        A,b = splitab(Ab,initcset.nd)
+        V = tryvol(A,b,initcset)[1].transpose() # get vertices for constraint set iteration
         #constraint checking for vertices
-        return -(initcset.A*V - initcset.b) #negative as to make valid entries > 0
-    
+        conscheck = -(initcset.A*V - initcset.b) #negative as to make valid entries > 0
+        return hstack([conscheck[x,:] for x in range(0,conscheck.shape[0])]) #compress to single line
+        
 #### Maximise volume
-    return optimize.fmin_slsqp(objfn,sp,f_ieqcon=ieconsfn,args=cset)
+    return optimize.fmin_slsqp(objfn,sp,f_ieqcons=ieconsfn,args=[cset])
 
 if __name__ == "__main__":
 #    import doctest
 #    doctest.testfile("tests/auxfunstests.txt")
+    from conclasses import conset
+    ineqs = mat('1 0 -1 1;-1 0 -1 0;0 1 -1 1;0 -1 -1 0')
+    cs = conset(ineqs)
+    print fitshape(cs,4,mat('1 0 0.8 -1 0 -0.2 0 1 0.8 0 -1 -0.2'))
+    
         
     
 #TODO - auxfuns
