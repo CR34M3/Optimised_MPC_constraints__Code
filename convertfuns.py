@@ -2,9 +2,8 @@
 """Functions to calculate vertices from constraints and vice versa."""
 from scipy import *
 from numpy import linalg, matlib
-import subprocess #to use qhull
 from gendatafile import *
-from auxfuns import *
+from auxfuns import uniqm, qhull
 from os import remove
 from sys import exit
 
@@ -97,7 +96,6 @@ def con2pscon(A,s,b):
 if __name__ == "__main__":
     import doctest
     doctest.testfile("tests/convertfunstests.txt")
-    
     
 #TODO con2vert =====
 # error-checking
