@@ -1,7 +1,47 @@
 #!/usr/bin/env python
 """Functions to optimally fit a 'shape' into another."""
-from scipy import mat,optimize,vstack,eye,hstack
+from scipy import mat,optimize,vstack,eye,hstack,ones,tile,sqrt,power,real
 import numpy
+
+def tryvol(A,b,cs):
+    """Try to determine volume of feasible region, otherwise impose box constraint."""
+    try:
+        V = con2vert(A,b) # get vertices for constraint set iteration
+    except: #catch unbound shapes
+        #create large box around original shape
+        fixA = vstack((eye(cs.nd),-eye(cs.nd)))
+        fixb = vstack((mat([numpy.max(xv) for xv in cs.vert.transpose()]).transpose(),
+                      -mat([numpy.min(xv) for xv in cs.vert.transpose()]).transpose()))
+        fA = vstack((fixA,A))
+        fb = vstack((fixb,b))
+        V = con2vert(fA,fb)
+    return qhull(V,"FA"),V #return vol (normal or fixed) and vertices (normal or fixed) 
+
+def splitab(inAb,nd):
+    """Split input Ab matrix into separate A and b."""
+    nd1 = nd+1
+    #split Ab into A and b (assuming all -1 for s)
+    Ab = mat(inAb)
+    tempAb = vstack([Ab[:,p*nd1:p*nd1+nd1] for p in range(0,Ab.shape[1]/nd1)])
+    return tempAb[:,:-1], tempAb[:,-1] #return A and b
+
+def genstart(cs,ncon):
+    """Generate a starting shape (for optimisation) with given number of faces."""
+    #1. Determine centre of initial region, cscent
+    c0 = mat(ones((1,cs.shape[1]))*0.6)
+    def cntrobjfn(cntr,*args):
+        csvert = args[0]
+        cmat = tile(cntr,(csvert.shape[0],1))
+        dist = sqrt(power((csvert-cmat),2)*mat(ones((cmat.shape[1],1)))) #return distance between vertices and centre
+        return real(sum(power(dist,2)))
+    cscent = optimize.fmin(cntrobjfn,c0,args=(cs))    
+    #2. Generate n-sphere, radius r and centre cscent, with ncon number of points on surface
+    #3. Equally space point on sphere's surface (maximise distances to all other points)
+    #4. Generate tangent planes on sphere at points
+    #5. Convert tangent planes to inequalities and generate feasible region (always closed?)
+    #6. Check if vertices of new feasible region is within initial shape
+    #7. Optimise sphere-radius, r, to have all points within initial shape
+    return cscent,cntrobjfn(c0,cs),cntrobjfn(cscent,cs)
 
 def fitshape(cset,ncon,sp):
     """
@@ -19,24 +59,6 @@ def fitshape(cset,ncon,sp):
 #### Define parameters
 #    sp = #starting point - combined Ab matrix to optimise
 #### Helping fns
-    def splitab(inAb,nd):
-        nd1 = nd+1
-        #split Ab into A and b (assuming all -1 for s)
-        Ab = mat(inAb)
-        tempAb = vstack([Ab[:,p*nd1:p*nd1+nd1] for p in range(0,Ab.shape[1]/nd1)])
-        return tempAb[:,:-1], tempAb[:,-1] #return A and b
-    def tryvol(A,b,cs):
-        try:
-            V = con2vert(A,b) # get vertices for constraint set iteration
-        except: #catch unbound shapes
-            #create large box around original shape
-            fixA = vstack((eye(cs.nd),-eye(cs.nd)))
-            fixb = vstack((mat([numpy.max(xv) for xv in cs.vert.transpose()]).transpose(),
-                          -mat([numpy.min(xv) for xv in cs.vert.transpose()]).transpose()))
-            fA = vstack((fixA,A))
-            fb = vstack((fixb,b))
-            V = con2vert(fA,fb)
-        return qhull(V,"FA"),V #return vol (normal or fixed) and vertices (normal or fixed) 
 #### Objective fn
     def objfn(Ab,*args):
         initcset = args[0]
@@ -52,3 +74,10 @@ def fitshape(cset,ncon,sp):
         return hstack([conscheck[x,:] for x in range(0,conscheck.shape[0])]) #compress to single line          
 #### Maximise volume
     return optimize.fmin_slsqp(objfn,sp,f_ieqcons=ieconsfn,args=[cset])
+
+if __name__ == "__main__":
+    from conclasses import conset
+    v = mat('1 0 1 0;0 1 1 0;1 0 -1 1;0 1 -1 1')
+    initcset = conset(v)
+    print initcset.vert
+    print genstart(initcset.vert,2)
