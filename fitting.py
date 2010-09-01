@@ -28,20 +28,25 @@ def splitab(inAb,nd):
 def genstart(cs,ncon):
     """Generate a starting shape (for optimisation) with given number of faces."""
     #1. Determine centre of initial region, cscent
-    c0 = mat(ones((1,cs.shape[1]))*0.6)
-    def cntrobjfn(cntr,*args):
-        csvert = args[0]
-        cmat = tile(cntr,(csvert.shape[0],1))
-        dist = sqrt(power((csvert-cmat),2)*mat(ones((cmat.shape[1],1)))) #return distance between vertices and centre
+    c0 = ones((1,cs.shape[1]))
+    def cntrobjfn(cntr):
+        cmat = tile(cntr,(cs.shape[0],1))
+        dist = sqrt(power((cs-cmat),2)*mat(ones((cmat.shape[1],1)))) #return distance between vertices and centre
         return real(sum(power(dist,2)))
-    cscent = optimize.fmin(cntrobjfn,c0,args=(cs))    
+    cscent = optimize.fmin(cntrobjfn,c0)
     #2. Generate n-sphere, radius r and centre cscent, with ncon number of points on surface
+    def nsphere(ptsn,cntr,rad):
+        cmatn = tile(cntr[:,:-1],(ptsn.shape[0],1))
+        ptsn1 = sqrt((rad**2)-power(ptsn-cmatn,2)*mat(ones((cmatn.shape[1],1)))) + cntr[:,-1]
+        return real(ptsn1)
     #3. Equally space point on sphere's surface (maximise distances to all other points)
+    #def sphereobjfn(pts):
+    #output as fraction of radius
     #4. Generate tangent planes on sphere at points
     #5. Convert tangent planes to inequalities and generate feasible region (always closed?)
     #6. Check if vertices of new feasible region is within initial shape
     #7. Optimise sphere-radius, r, to have all points within initial shape
-    return cscent,cntrobjfn(c0,cs),cntrobjfn(cscent,cs)
+    #return cscent
 
 def fitshape(cset,ncon,sp):
     """
@@ -77,7 +82,5 @@ def fitshape(cset,ncon,sp):
 
 if __name__ == "__main__":
     from conclasses import conset
-    v = mat('1 0 1 0;0 1 1 0;1 0 -1 1;0 1 -1 1')
-    initcset = conset(v)
-    print initcset.vert
-    print genstart(initcset.vert,2)
+    v = mat('1 0;0 1;0 0;1 1')
+    print genstart(v,2)
