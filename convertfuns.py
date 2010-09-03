@@ -2,8 +2,6 @@
 """Functions to calculate vertices from constraints and vice versa."""
 from scipy import *
 from numpy import linalg, matlib
-import subprocess #to use qhull
-from gendatafile import *
 from auxfuns import *
 from os import remove
 from sys import exit
@@ -15,7 +13,6 @@ def vert2con(V):
     """
     # Dependencies: * qhull (libqhull5, qhull-bin)
     #               * scipy
-    #               * gendatafile
     k = qhull(V,"n") #convert to martrix with vertices
     # k is a (n+1)x(p) matrix in the form [A b] (from qhull doc: Ax < -b is satisfied), thus;
     A = k[:,:-1]
