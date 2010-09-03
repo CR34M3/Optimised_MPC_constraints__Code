@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """Auxiliary functions to manipulate data-types and and change data-formats."""
 from scipy import zeros,mat,optimize,ceil,tile,multiply
-from gendatafile import *
 import numpy
 from os import remove
 import subprocess #to use qhull
@@ -31,19 +30,29 @@ def mat2ab(Asbmat):
     b = numpy.multiply(b,-s)
     return A,s,b
 
+def qhullstr(V):
+    """ 
+    generate string qhull input format.
+    
+    yields a newline separated stirng of format:
+        dimensions (columns of V)
+        number of points (rows of V)
+        one string for each row of V
+    """
+    V = numpy.array(V) # TODO: only use arrays instead of matrixes
+    return "%i\n%i\n" % (V.shape[1], V.shape[0]) \
+           + "\n".join(" ".join(str(e) for e in row) for row in V) 
+
 def qhull(V,qstring):
     """
     Use qhull to determine convex hull / volume / normals.
      V - [matrix] vertices
      qstring - [string] arguments to pass to qhull
     """
-    # subprocess.call(["function","arguments"]) or subprocess.Popen('function expression', shell=True)
-    # run qhull with: qhull < data or cat data | qhull
-    filename = genfile(V)
-    qstringfull = "qhull " + qstring + " < " + filename
-    qhullp = subprocess.Popen(qstringfull, shell=True, stdout=subprocess.PIPE) #calc convex hull and get normals
-    Vc = qhullp.communicate()[0] #qhull output to Vc
-    remove(filename)
+
+    qhullp = subprocess.Popen(["qhull", qstring],
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    Vc = qhullp.communicate(qhullstr(V))[0] #qhull output to Vc
         
     if qstring == "FA": #calc summary and volume
         ks = Vc.split('\n')[-3]
