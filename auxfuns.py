@@ -13,8 +13,8 @@ def uniqm(A,t=0.01):
     """
     Nrows = A.shape[0]
     uniquerows = [r1 for r1 in range(Nrows)
-              if not any(numpy.all(abs(A[r1,:]-A[r2,:])<t)
-             for r2 in range(r1+1,Nrows))]
+                  if not any(numpy.all(abs(A[r1,:]-A[r2,:])<t)
+                             for r2 in range(r1+1,Nrows))]
     return A[uniquerows,:].copy()
 
 
