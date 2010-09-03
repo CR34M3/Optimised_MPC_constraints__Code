@@ -58,7 +58,7 @@ def qhull(V,qstring):
         ks = Vc.split('\n')[-3]
         Vol = float(ks.split(' ')[-1]) #get volume of D-hull
         return Vol
-    if qstring == "Ft": #calc vertices and facets
+    elif qstring == "Ft": #calc vertices and facets
         ks = Vc.split('\n')
         fms = int(ks[1].split(' ')[1]) #get size of facet matrix
         fmat = ks[-fms-1:-1]
@@ -66,7 +66,7 @@ def qhull(V,qstring):
         fmatn = fmat[:,0] #number of points on facets
         fmatv = fmat[:,1:] #vertices on facets
         return fmatv
-    if qstring == "n": #calc convex hull and get normals
+    elif qstring == "n": #calc convex hull and get normals
         ks = ';'.join(Vc.split('\n')[2:]) #remove leading dimension output
         k = mat(ks[:-1]) #convert to martrix with vertices
         return k
