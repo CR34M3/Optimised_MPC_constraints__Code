@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """Functions to optimally fit a 'shape' into another."""
-from scipy import mat,optimize,vstack,eye,hstack,ones,tile,sqrt,power,real
+from scipy import array,mat,optimize,vstack,eye,hstack,ones,tile,sqrt,power,real
 import numpy
+import random
 
 def tryvol(A,b,cs):
     """Try to determine volume of feasible region, otherwise impose box constraint."""
@@ -34,19 +35,24 @@ def genstart(cs,ncon):
         dist = sqrt(power((cs-cmat),2)*mat(ones((cmat.shape[1],1)))) #return distance between vertices and centre
         return real(sum(power(dist,2)))
     cscent = optimize.fmin(cntrobjfn,c0)
-    #2. Generate n-sphere, radius r and centre cscent, with ncon number of points on surface
-    def nsphere(ptsn,cntr,rad):
-        cmatn = tile(cntr[:,:-1],(ptsn.shape[0],1))
-        ptsn1 = sqrt((rad**2)-power(ptsn-cmatn,2)*mat(ones((cmatn.shape[1],1)))) + cntr[:,-1]
-        return real(ptsn1)
-    #3. Equally space point on sphere's surface (maximise distances to all other points)
-    #def sphereobjfn(pts):
-    #output as fraction of radius
-    #4. Generate tangent planes on sphere at points
-    #5. Convert tangent planes to inequalities and generate feasible region (always closed?)
-    #6. Check if vertices of new feasible region is within initial shape
-    #7. Optimise sphere-radius, r, to have all points within initial shape
-    #return cscent
+    #2. Generate ncon-1 Gaussian vectors
+    spherevecs = ones((ncon,cs.shape[1]))
+    for rows in range(spherevecs.shape[0] - 1):
+        for cols in range(spherevecs.shape[1]):
+            spherevecs[rows,cols] = random.gauss(0, 0.33)
+    #3. Determine resultant of vectors, add last vector as mirror resultant
+    spherevecs[-1, :] = -sum(spherevecs[:-1, :])
+    spherepts = spherevecs.T * (1/sqrt(sum((spherevecs.T)**2)))
+    #4. Generate tangent planes on sphere at points, convert to inequalities
+    #return sum((2*spherepts.T*cscent).T) - 2*sum(spherepts**2)
+    return spherepts.T
+    return 2*sum(spherepts**2)
+    A = 2*spherepts.T
+    b = 2*sum(spherepts**2)
+    #s = [sign(x) for x in]
+    #5. Check if vertices of new feasible region is within initial shape
+    #6. Optimise sphere-radius, r, to have all points within initial shape
+    return spherepts
 
 def fitshape(cset,ncon,sp):
     """
@@ -82,5 +88,5 @@ def fitshape(cset,ncon,sp):
 
 if __name__ == "__main__":
     from conclasses import conset
-    v = mat('1 0;0 1;0 0;1 1')
-    print genstart(v,2)
+    v = array([[1, 0], [0, 1], [0, 0], [1, 1]])
+    print genstart(v,3)
