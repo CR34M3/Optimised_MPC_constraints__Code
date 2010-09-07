@@ -40,3 +40,13 @@ class ConSet:
         combb = vstack((self.b,conset2.b))
         intcombvert = con2vert(combA,combb)
         return vert2con(intcombvert)
+    
+    def allinside(self,conset2):
+        """
+        Determine if all vertices of self is within conset2. allvinside merely
+        returns True/False whereas insidenorm returns a measure of 'inside-ness'
+        better suited for optimisers.
+        """
+        allvinside = True
+        insidenorm = 1
+        return allvinside, insidenorm
