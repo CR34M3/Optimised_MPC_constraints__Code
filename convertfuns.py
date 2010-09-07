@@ -20,7 +20,7 @@ def vert2con(V):
     A = k[:,:-1]
     b = -k[:,-1]
     s = -ones([k.shape[0],1])
-    return hstack([A,s,b])
+    return A, s, b
 
 def con2vert(A,b):
     """Convert sets of constraints to a list of vertices (of the feasible region)."""
@@ -33,6 +33,8 @@ def con2vert(A,b):
     #         - Numpy
     #         - gendatafile
     #         - uniqmat
+    A = mat(A)  # DIRTY FIX - REMOVE ASAP
+    b = mat(b)  # DIRTY FIX - REMOVE ASAP
     c = linalg.lstsq(A,b)[0]
     b = b-A*c
     D = A / matlib.repmat(b,1,A.shape[1])
@@ -102,3 +104,4 @@ if __name__ == "__main__":
 #    - fix volume check (for redundant constraints)
 #TODO general
 # check that floating-point math is used
+# fix output of con2pscon

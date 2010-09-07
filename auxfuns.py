@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Auxiliary functions to manipulate data-types and and change data-formats."""
-from scipy import zeros,mat,optimize,ceil,tile,multiply
+from scipy import zeros,mat,optimize,ceil,tile,multiply,array,ones
 import numpy
 import subprocess #to use qhull
 
@@ -20,15 +20,14 @@ def uniqm(A,t=0.01):
 def mat2ab(Asbmat):
     """
     Transform [A s b]-form matrix to standard Ax<b notation.
-     Asbmat - [matrix] inequality matrix in the form Ax<b, matrix = [A s b] 
+     Asbmat - [array] inequality matrix in the form Ax<b, matrix = [A s b] 
                         with s the sign vector [1:>, -1:<]
     """    
-    A = Asbmat[:,:-2]
-    s = Asbmat[:,-2]
-    b = Asbmat[:,-1]
-    A = numpy.multiply(A,-s)
-    b = numpy.multiply(b,-s)
-    return A,s,b
+    stmp = array([Asbmat[:,-2]])
+    b = Asbmat[:,-1]*-stmp
+    A = Asbmat[:,:-2]*-stmp.T
+    s = -ones(stmp.shape)
+    return A,s.T,b.T
 
 def qhullstr(V):
     """ 
@@ -77,7 +76,7 @@ if __name__ == "__main__":
     import doctest
     doctest.testfile("tests/auxfunstests.txt")
     
-        
     
 #TODO - auxfuns
 # qhull error handling   
+# fix auxfuns tests

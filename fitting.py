@@ -3,6 +3,7 @@
 from scipy import array,mat,optimize,vstack,eye,hstack,ones,tile,sqrt,power,real
 import numpy
 import random
+from conclasses import ConSet
 
 def tryvol(A,b,cs):
     """Try to determine volume of feasible region, otherwise impose box constraint."""
@@ -29,28 +30,28 @@ def splitab(inAb,nd):
 def genstart(cs,ncon):
     """Generate a starting shape (for optimisation) with given number of faces."""
     #1. Determine centre of initial region, cscent
-    c0 = ones((1,cs.shape[1]))
+    c0 = ones((1,cs.vert.shape[1]))
     def cntrobjfn(cntr):
-        cmat = tile(cntr,(cs.shape[0],1))
-        dist = sqrt(power((cs-cmat),2)*mat(ones((cmat.shape[1],1)))) #return distance between vertices and centre
+        cmat = tile(cntr,(cs.vert.shape[0],1))
+        dist = sqrt(power((cs.vert-cmat),2)*mat(ones((cmat.shape[1],1)))) #return distance between vertices and centre
         return real(sum(power(dist,2)))
     cscent = optimize.fmin(cntrobjfn,c0)
     #2. Generate ncon-1 Gaussian vectors
-    spherevecs = ones((ncon,cs.shape[1]))
+    spherevecs = ones((ncon,cs.vert.shape[1]))
     for rows in range(spherevecs.shape[0] - 1):
         for cols in range(spherevecs.shape[1]):
-            spherevecs[rows,cols] = random.gauss(0, 0.33)
+            spherevecs[rows,cols] = random.gauss(0, 0.33)  # TODO: check std dev
     #3. Determine resultant of vectors, add last vector as mirror resultant
     spherevecs[-1, :] = -sum(spherevecs[:-1, :])
-    spherepts = spherevecs.T * (1/sqrt(sum((spherevecs.T)**2)))
+    srad = 1.0
+    spherepts = spherevecs.T * (srad/sqrt(sum((spherevecs.T)**2)))  # points on sphere
+    spherepts = spherepts.T + cscent  # move to center of constraint set
     #4. Generate tangent planes on sphere at points, convert to inequalities
-    #return sum((2*spherepts.T*cscent).T) - 2*sum(spherepts**2)
-    return spherepts.T
-    return 2*sum(spherepts**2)
-    A = 2*spherepts.T
-    b = 2*sum(spherepts**2)
-    #s = [sign(x) for x in]
+    A = 2*spherepts
+    b = 2*sum(spherepts.T**2)
+    s = -ones(b.shape)
     #5. Check if vertices of new feasible region is within initial shape
+    spset = ConSet(A,s,b)
     #6. Optimise sphere-radius, r, to have all points within initial shape
     return spherepts
 
@@ -58,7 +59,7 @@ def fitshape(cset,ncon,sp):
     """
     Fit a constraint set (specified by the number of constraints) within an existing
     constraint set.
-     cset - [conset] existing constraint set
+     cset - [ConSet] existing constraint set
      ncon - [int] number of constraints to fit
     """
     from convertfuns import con2vert
@@ -87,6 +88,6 @@ def fitshape(cset,ncon,sp):
     return optimize.fmin_slsqp(objfn,sp,f_ieqcons=ieconsfn,args=[cset])
 
 if __name__ == "__main__":
-    from conclasses import conset
     v = array([[1, 0], [0, 1], [0, 0], [1, 1]])
-    print genstart(v,3)
+    initcset = ConSet(v)
+    print genstart(initcset,4)

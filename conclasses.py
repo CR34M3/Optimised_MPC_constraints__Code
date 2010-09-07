@@ -7,16 +7,22 @@ Author: Andre Campher
 #               - auxfuns
 #               - SciPy
 
-from auxfuns import mat2ab, qhull
+from auxfuns import qhull
 from convertfuns import *
 from scipy import *
 
-class conset:
-    def __init__(self,conmatrix):
-        self.A, self.s, self.b = mat2ab(conmatrix)
+class ConSet:
+    def __init__(self,*inargs):
+        if len(inargs) == 1:
+            self.vert = inargs[0]
+            self.A, self.s, self.b = vert2con(self.vert)
+        elif len(inargs) == 3:
+            self.A, self.s, self.b = inargs
+            self.vert = con2vert(self.A,self.b)
+        else:
+            exit(1)  # TODO: Raise exception
         self.nd = self.A.shape[1]
-        self.vert = con2vert(self.A,self.b)
-        self.cons = conmatrix
+        self.cons = hstack((self.A, self.s, self.b))  # (for historical reasons) TODO: remove
         self.vol = qhull(self.vert,"FA")
         
     def outconlin(self,model):
@@ -33,4 +39,4 @@ class conset:
         combA = vstack((self.A,conset2.A))
         combb = vstack((self.b,conset2.b))
         intcombvert = con2vert(combA,combb)
-        return vert2con(intcombvert)        
+        return vert2con(intcombvert)
