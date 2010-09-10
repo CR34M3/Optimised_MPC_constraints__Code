@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """Auxiliary functions to manipulate data-types and and change data-formats."""
-from scipy import zeros,mat,optimize,ceil,tile,multiply,array,ones
+from scipy import mat, array, ones
 import numpy
 import subprocess #to use qhull
 
-def uniqm(A,t=0.01):
+def uniqm(A, t=0.01):
     """
     Return input matrix with duplicate entries removed.
      A - [matrix] input matrix (possibly containing duplicates)
@@ -12,9 +12,9 @@ def uniqm(A,t=0.01):
     """
     Nrows = A.shape[0]
     uniquerows = [r1 for r1 in range(Nrows)
-                  if not any(numpy.all(abs(A[r1,:]-A[r2,:])<t)
-                             for r2 in range(r1+1,Nrows))]
-    return A[uniquerows,:].copy()
+                  if not any(numpy.all(abs(A[r1, :] - A[r2, :]) < t)
+                             for r2 in range(r1 + 1, Nrows))]
+    return A[uniquerows, :].copy()
 
 
 def mat2ab(Asbmat):
@@ -23,11 +23,11 @@ def mat2ab(Asbmat):
      Asbmat - [array] inequality matrix in the form Ax<b, matrix = [A s b] 
                         with s the sign vector [1:>, -1:<]
     """    
-    stmp = array([Asbmat[:,-2]])
-    b = Asbmat[:,-1]*-stmp
-    A = Asbmat[:,:-2]*-stmp.T
+    stmp = array([Asbmat[:, -2]])
+    b = Asbmat[:, -1]*-stmp
+    A = Asbmat[:, :-2]*-stmp.T
     s = -ones(stmp.shape)
-    return A,s.T,b.T
+    return A, s.T, b.T
 
 def qhullstr(V):
     """ 
@@ -42,7 +42,7 @@ def qhullstr(V):
     return "%i\n%i\n" % (V.shape[1], V.shape[0]) \
            + "\n".join(" ".join(str(e) for e in row) for row in V) 
 
-def qhull(V,qstring):
+def qhull(V, qstring):
     """
     Use qhull to determine convex hull / volume / normals.
      V - [matrix] vertices
@@ -62,8 +62,7 @@ def qhull(V,qstring):
         fms = int(ks[1].split(' ')[1]) #get size of facet matrix
         fmat = ks[-fms-1:-1]
         fmat = mat(';'.join(fmat)) #generate matrix
-        fmatn = fmat[:,0] #number of points on facets
-        fmatv = fmat[:,1:] #vertices on facets
+        fmatv = fmat[:, 1:] #vertices on facets
         return fmatv
     elif qstring == "n": #calc convex hull and get normals
         ks = ';'.join(Vc.split('\n')[2:]) #remove leading dimension output

@@ -12,10 +12,11 @@ from conclasses import ConSet
 from scipy import array
 from auxfuns import mat2ab
 
-#MAIN START ===================================================================================================
+#MAIN START =================================================================
 
 # define AIS and DOS (equations : Ax<b)
-# equations in the form Ax<b, matrix = [A s b] with s the sign vector [1:>, -1:<]
+# equations in the form Ax<b, matrix = [A s b] 
+# with s the sign vector [1:>, -1:<]
 AISA, AISs, AISb = mat2ab(array([[1., 0, 1, -1],
                                  [1, 0, -1,  1],
                                  [0, 1,  1, -1],
@@ -33,7 +34,8 @@ G = array([[1.2, 0.5],
            [0.5, 1.2]])  # gain matrix - atm linear steady state matrix
 
 # calc AOS (from G and AIS)
-AOSA, AOSs, AOSb = AIS.outconlin(G)  # TODO: fix output of outconlin (should be 3)
+# TODO: fix output of outconlin (should be 3)
+AOSA, AOSs, AOSb = AIS.outconlin(G)  
 AOS = ConSet(AOSA, AOSs, AOSb)
 
 # Calc intersection of AOS|DOS
