@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Functions to optimally fit a 'shape' into another."""
+"""Functions to optimally fit one 'shape' into another."""
 from scipy import array, mat, optimize, vstack, eye, hstack, ones, tile, sqrt
 from scipy import power, real
 import numpy
@@ -59,7 +59,7 @@ def genstart(cs, ncon):
     spherevecs[-1, :] = -sum(spherevecs[:-1, :])
     srad = 1.0
     # points on sphere
-    spherepts = spherevecs.T * (srad/sqrt(sum((spherevecs.T)**2)))  
+    spherepts = spherevecs.T*(srad/sqrt(sum((spherevecs.T)**2)))  
     spherepts = spherepts.T + cscent  # move to center of constraint set
     #4. Generate tangent planes on sphere at points, convert to inequalities
     A = 2*spherepts

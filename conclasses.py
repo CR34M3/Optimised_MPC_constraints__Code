@@ -9,7 +9,7 @@ Author: Andre Campher
 
 from auxfuns import qhull
 from convertfuns import vert2con, con2vert
-from scipy import hstack, empty, vstack, dot
+from scipy import hstack, empty, vstack, dot, tile, all, zeros
 
 class ConSet:
     """
@@ -34,7 +34,7 @@ class ConSet:
         # calc AOS (from G and AIS)
         outverttemp = empty([1, self.vert.shape[1]])
         for v in self.vert:
-            x = model * v.transpose()
+            x = model*v.transpose()
             outverttemp = vstack((outverttemp, x.transpose()))
         #remove first line of junk data from outverttemp and convert
         return vert2con(outverttemp[1:, :]) 
@@ -53,8 +53,17 @@ class ConSet:
         better suited for optimisers.
         """
         # Inside check
-        print dot(conset2.A, self.vert.T)
-        allvinside = True
+        Av = dot(conset2.A, self.vert.T)
+        bv = tile(conset2.b, (1, self.vert.shape[0]))
+        allvinside = all(Av < bv)
         # Inside norm
-        insidenorm = 1
+        # insidenorm = array([[con1in,con1out],[con2in,con2out]...])
+        insidenorm = zeros((Av.shape[0], 2))
+        intmp = Av - bv
+        for cons in range(Av.shape[0]):
+            for verts in range(Av.shape[1]):
+                if intmp[cons, verts] < 0:  # inside
+                    insidenorm[cons, 0] = insidenorm[cons, 0]-intmp[cons, verts]
+                else:  # outside
+                    insidenorm[cons, 1] = insidenorm[cons, 1]-intmp[cons, verts]
         return allvinside, insidenorm
