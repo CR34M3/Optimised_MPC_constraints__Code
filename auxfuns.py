@@ -73,7 +73,7 @@ def qhull(V, qstring):
 
 if __name__ == "__main__":
     import doctest
-    doctest.testfile("tests/auxfunstests.txt")
+    doctest.testfile("tests/auxfunstests.txt")   
     
     
 #TODO - auxfuns

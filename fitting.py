@@ -37,7 +37,7 @@ def splitab(inAb, nd):
                      for p in range(0, Ab.shape[1]/nd1)])
     return tempAb[:, :-1], tempAb[:, -1] #return A and b
 
-def genstart(cs, ncon):
+def genstart(ncon, cs):
     """
     Generate a starting shape (for optimisation) with given number of faces.
     """
@@ -55,20 +55,47 @@ def genstart(cs, ncon):
     for rows in range(spherevecs.shape[0] - 1):
         for cols in range(spherevecs.shape[1]):
             spherevecs[rows, cols] = random.gauss(0, 0.33)  # TODO: check sigma
-    #3. Determine resultant of vectors, add last vector as mirror resultant
+    #3. Determine resultant of vectors, add last vector as mirror of resultant
     spherevecs[-1, :] = -sum(spherevecs[:-1, :])
-    srad = 1.0
     # points on sphere
-    spherepts = spherevecs.T*(srad/sqrt(sum((spherevecs.T)**2)))  
-    spherepts = spherepts.T + cscent  # move to center of constraint set
-    #4. Generate tangent planes on sphere at points, convert to inequalities
-    A = 2*spherepts
-    b = array([2*sum(spherepts.T**2)]).T
-    s = array(-ones(b.shape))
-    #5. Check if vertices of new feasible region is within initial shape
+    def spherefn(srad):
+        """
+        Function to create points on a sphere (of radius, srad), convert them to
+        halfspaces and convert the halfspaces to a constraint set.
+        """
+        spherepts = spherevecs.T*(srad/sqrt(sum((spherevecs.T)**2)))  
+        spherepts = spherepts.T + cscent  # move to center of constraint set
+        #4. Generate tangent planes on sphere at points, convert to inequalities
+        A = -(spherepts - cscent)
+        b = array([(sum((A*spherepts).T))]).T
+        s = array(-ones(b.shape))
+        return ConSet(A, s, b)  # constraints around sphere
+    def sphereobjfn(srad):
+        """Objective function to fit sphere within inital constraint set."""
+        spcset = spherefn(srad)
+        #5. Check if vertices of new feasible region is within initial shape
+        k = spcset.allinside(cs)[1]
+        print k
+        return sum(k[:, 0]**2) + sum((abs(k[:, 1]))**3)
     #6. Optimise sphere-radius, r, to have all points within initial shape
-    spset = ConSet(A,s,b)
-    return spherepts
+    
+    startrad = 1.0
+    if spherefn(startrad).allinside(cs)[0]:
+        while spherefn(startrad).allinside(cs)[0]:
+            startrad = startrad + 0.1
+        finrad = startrad - 0.1    
+    elif not spherefn(startrad).allinside(cs)[0]:
+        while not spherefn(startrad).allinside(cs)[0]:
+            startrad = startrad - 0.1
+        finrad = startrad
+
+#    startrad = 1.0
+#    finrad = optimize.fmin(sphereobjfn, startrad)
+#    print "New sphere, radius: ", finrad
+#    print spherefn(finrad).vert
+#    print spherefn(finrad).allinside(cs)
+    #startset = spherefn(finrad)
+    return spherefn(finrad)
 
 def fitshape(cset, ncon, sp):
     """
@@ -106,6 +133,6 @@ def fitshape(cset, ncon, sp):
     return optimize.fmin_slsqp(objfn, sp, f_ieqcons=ieconsfn, args=[cset])
 
 if __name__ == "__main__":
-    v = array([[1, 0], [0, 1], [0, 0], [1, 1]])
+    v = array([[10, 0], [0, 10], [0, 0], [10, 10]])
     initcset = ConSet(v)
-    print genstart(initcset, 4)
+    genstart(3, initcset)

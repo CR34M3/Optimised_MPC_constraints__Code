@@ -27,7 +27,10 @@ class ConSet:
             exit(1)  # TODO: Raise exception
         self.nd = self.A.shape[1]
         self.cons = hstack((self.A, self.s, self.b))  # TODO: remove this
-        self.vol = qhull(self.vert,"FA")
+        
+    def vol(self):
+        """Return 'volume' of feasible region."""
+        return qhull(self.vert,"FA")
         
     def outconlin(self, model):
         """Convert constraints to output space using a linear model"""       
@@ -60,6 +63,8 @@ class ConSet:
         # insidenorm = array([[con1in,con1out],[con2in,con2out]...])
         insidenorm = zeros((Av.shape[0], 2))
         intmp = Av - bv
+        #print conset2.A, conset2.s, conset2.b
+        #print intmp
         for cons in range(Av.shape[0]):
             for verts in range(Av.shape[1]):
                 if intmp[cons, verts] < 0:  # inside

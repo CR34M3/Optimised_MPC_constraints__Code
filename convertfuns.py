@@ -34,15 +34,15 @@ def con2vert(A, b):
     c = linalg.lstsq(A, b)[0]
     b = b-A*c
     D = A/matlib.repmat(b, 1, A.shape[1])
-    Dtest = vstack((D, zeros([1, D.shape[1]])))
+#    Dtest = vstack((D, zeros([1, D.shape[1]])))
 
-#== Volume error check == (not working)
-    VolDt = qhull(Dtest, "FA") #get volume of D-hull
-    VolD = qhull(D, "FA") #get volume of D-hull
-
-    if VolDt > VolD:
-        print 'error : Non-bounding constraints detected. Exiting...'
-        exit(1)
+##== Volume error check == (not working)
+#    VolDt = qhull(Dtest, "FA") #get volume of D-hull
+#    VolD = qhull(D, "FA") #get volume of D-hull
+#
+#    if VolDt > VolD:
+#        print 'error : Non-bounding constraints detected. Exiting...'
+#        exit(1)
 #== ==
 
     fmatv = qhull(D, "Ft") #vertices on facets
