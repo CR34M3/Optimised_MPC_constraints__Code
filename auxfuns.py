@@ -48,29 +48,31 @@ def qhull(V, qstring):
      V - [matrix] vertices
      qstring - [string] arguments to pass to qhull
     """
-
-    qhullp = subprocess.Popen(["qhull", qstring],
+    try:
+        qhullp = subprocess.Popen(["qhull", qstring],
                               stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    Vc = qhullp.communicate(qhullstr(V))[0] #qhull output to Vc
+        Vc = qhullp.communicate(qhullstr(V))[0] #qhull output to Vc
         
-    if qstring == "FA": #calc summary and volume
-        ks = Vc.split('\n')[-3]
-        Vol = float(ks.split(' ')[-1]) #get volume of D-hull
-        return Vol
-    elif qstring == "Ft": #calc vertices and facets
-        ks = Vc.split('\n')
-        fms = int(ks[1].split(' ')[1]) #get size of facet matrix
-        fmat = ks[-fms-1:-1]
-        fmat = mat(';'.join(fmat)) #generate matrix
-        fmatv = fmat[:, 1:] #vertices on facets
-        return fmatv
-    elif qstring == "n": #calc convex hull and get normals
-        ks = ';'.join(Vc.split('\n')[2:]) #remove leading dimension output
-        k = mat(ks[:-1]) #convert to martrix with vertices
-        return k
-    else:
-        exit(1)
-
+        if qstring == "FA": #calc summary and volume
+            ks = Vc.split('\n')[-3]
+            Vol = float(ks.split(' ')[-1]) #get volume of D-hull
+            return Vol
+        elif qstring == "Ft": #calc vertices and facets
+            ks = Vc.split('\n')
+            fms = int(ks[1].split(' ')[1]) #get size of facet matrix
+            fmat = ks[-fms-1:-1]
+            fmat = mat(';'.join(fmat)) #generate matrix
+            fmatv = fmat[:, 1:] #vertices on facets
+            return fmatv
+        elif qstring == "n": #calc convex hull and get normals
+            ks = ';'.join(Vc.split('\n')[2:]) #remove leading dimension output
+            k = mat(ks[:-1]) #convert to martrix with vertices
+            return k
+        else:
+            exit(1)
+    except:
+        raise NameError('QhullError')
+    
 if __name__ == "__main__":
     import doctest
     doctest.testfile("tests/auxfunstests.txt")   
