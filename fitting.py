@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Functions to optimally fit one 'shape' into another."""
 from scipy import array, mat, optimize, eye, c_, r_, ones, tile, sqrt
-from scipy import power, real, size
+from scipy import power, real, size, vstack
 import numpy
 import random
 from conclasses import ConSet
@@ -29,7 +29,8 @@ def tryvol(A, b, cs):
 
 def splitAb(inAb, nd):
     """Split input Ab matrix into separate A and b."""
-    tmpAb = r_[[inAb[2*x:2*x + nd + 1] for x in range(inAb.shape[0]/(nd+1))]]
+    tmpAb = vstack([inAb[2*x:2*x + nd + 1] 
+                    for x in range(inAb.shape[0]/(nd+1))])
     A = tmpAb[:, :-1]
     b = array([tmpAb[:, -1]]).T
     return A, b
@@ -92,16 +93,16 @@ def fitshape(ncon, cset):
     # Constraints are bounding
     # All vertices within constraint set
     #### Define parameters
-    spset = genstart(ncon, cset)  
+    spset = genstart(ncon, cset) 
     sp = c_[spset.A, spset.b] # starting point - combined Ab matrix to optimise
     #### Objective fn
     def objfn(Ab, *args):
         """Volume objective function."""
         initcs = args[0]
         A, b = splitAb(Ab, initcs.nd)
-        return -tryvol(A, b, initcs)[0] #-volume to minimise 
-    #### Constraints    
-    def ieconsfn(Ab, *args):
+        return -tryvol(A, b, initcs)[0]
+    #### Constraints
+    def ieqconsfn(Ab, *args):
         """Optimiser inequality constraint function."""
         initcs = args[0]
         A, b = splitAb(Ab, initcs.nd)
@@ -109,14 +110,21 @@ def fitshape(ncon, cset):
         V = tryvol(A, b, initcs)[1]
         iterset = ConSet(V)
         #constraint checking for vertices
-        ineqs = iterset.allinside(initcs)[1] 
+        ineqs = iterset.allinside(initcs)[1][:, 1]
         return ineqs.reshape(size(ineqs), )
     #### Maximise volume
-    return optimize.fmin_slsqp(objfn, sp, f_ieqcons=ieconsfn, args=[cset])
+    print objfn(sp, cset)
+    return optimize.fmin_slsqp(objfn, sp, f_ieqcons=ieqconsfn, args=[cset])
 
 if __name__ == "__main__":
-    v = array([[10, 0], [0, 10], [0, 0], [10, 10]])
+    from pylab import plot, show
+    v = array([[0, 0], [10, 0], [10, 10], [0, 10]])
     initcset = ConSet(v)
-    tA, tb = splitAb(fitshape(3, initcset), initcset.nd)
+    Abopt = fitshape(3, initcset)
+    tA, tb = splitAb(Abopt, initcset.nd)
     ts = -ones(tb.shape)
-    print ConSet(tA, ts, tb).vert
+    optset = ConSet(tA, ts, tb)
+    vp2 = vstack([optset.vert, optset.vert[0, :]])
+    vp = vstack([v, v[0, :]])
+    plot(vp[:, 0], vp[:, 1], 'b', vp2[:, 0], vp2[:, 1], 'r')
+    show()

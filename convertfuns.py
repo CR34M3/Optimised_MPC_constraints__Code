@@ -29,8 +29,8 @@ def con2vert(A, b):
     #  -con2vert-constraints-to-vertices
     # Author: Michael Kelder (Original)
     #         Andre Campher (Python implementation)
-    A = mat(A)  # DIRTY FIX - REMOVE ASAP
-    b = mat(b)  # DIRTY FIX - REMOVE ASAP
+    A = mat(A)
+    b = mat(b)
     c = linalg.lstsq(A, b)[0]
     b = b-A*c
     D = A/matlib.repmat(b, 1, A.shape[1])
@@ -53,7 +53,7 @@ def con2vert(A, b):
         G[ix, :] = linalg.lstsq(F, ones((F.shape[0], 1)))[0].transpose()
 
     V = G + matlib.repmat(c.transpose(), G.shape[0], 1)
-    ux = uniqm(V, 0.01)
+    ux = uniqm(V, 0.0001)
 
     return ux
 
