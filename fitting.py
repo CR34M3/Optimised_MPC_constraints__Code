@@ -104,13 +104,13 @@ def fitshape(ncon, cset):
         A, b = splitAb(Ab, initcs.nd)
         vol, V = tryvol(A, b, initcs)
         dists = pdist(V)  # pairwise distances between vertices
-        return -vol*(average(dists))
+        return -vol
     #### Constraints
     def eqconsfn(Ab, *args):
         """Optimiser equality constraint function."""
         initcs = args[0]
         b = splitAb(Ab, initcs.nd)[1]
-        return array([linalg.norm(b) - 100])
+        return array([linalg.norm(b) - 10])
     def ieqconsfn(Ab, *args):
         """Optimiser inequality constraint function."""
         initcs = args[0]
@@ -119,7 +119,7 @@ def fitshape(ncon, cset):
         V = tryvol(A, b, initcs)[1]
         iterset = ConSet(V)
         #constraint checking for vertices
-        ineqs = iterset.allinside(initcs)[1][:,1]
+        ineqs = iterset.allinside(initcs)[1][:, 1]
         return ineqs.reshape(size(ineqs), )
     #### Maximise volume
     optAb = optimize.fmin_slsqp(objfn, sp, f_eqcons=eqconsfn, 

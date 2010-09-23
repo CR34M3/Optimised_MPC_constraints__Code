@@ -63,11 +63,11 @@ def qhull(V, qstring):
             fmat = ks[-fms-1:-1]
             fmat = mat(';'.join(fmat)) #generate matrix
             fmatv = fmat[:, 1:] #vertices on facets
-            return fmatv
+            return array(fmatv)
         elif qstring == "n": #calc convex hull and get normals
             ks = ';'.join(Vc.split('\n')[2:]) #remove leading dimension output
             k = mat(ks[:-1]) #convert to martrix with vertices
-            return k
+            return array(k)
         else:
             exit(1)
     except:

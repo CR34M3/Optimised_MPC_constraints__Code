@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Functions to calculate vertices from constraints and vice versa."""
-from scipy import ones, mat, vstack, zeros, hstack, eye
+from scipy import ones, mat, vstack, zeros, hstack, eye, array
 from numpy import linalg, matlib
 from auxfuns import uniqm, qhull
 
@@ -16,8 +16,8 @@ def vert2con(V):
     # k is a (n+1)x(p) matrix in the form [A b] (from qhull doc: Ax < -b is
     # satisfied), thus;
     A = k[:, :-1]
-    b = -k[:, -1]
-    s = -ones([k.shape[0], 1])
+    b = array([-k[:, -1]]).T
+    s = -ones(b.shape)
     return A, s, b
 
 def con2vert(A, b):

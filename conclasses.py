@@ -9,7 +9,7 @@ Author: Andre Campher
 
 from auxfuns import qhull
 from convertfuns import vert2con, con2vert
-from scipy import hstack, empty, vstack, dot, tile, all, zeros
+from scipy import hstack, empty, vstack, dot, tile, all, zeros, sqrt
 
 class ConSet:
     """
@@ -26,7 +26,6 @@ class ConSet:
         else:
             exit(1)  # TODO: Raise exception
         self.nd = self.A.shape[1]
-        self.cons = hstack((self.A, self.s, self.b))  # TODO: remove this
         
     def vol(self):
         """Return 'volume' of feasible region."""
@@ -65,8 +64,9 @@ class ConSet:
         intmp = Av - bv
         for cons in range(Av.shape[0]):
             for verts in range(Av.shape[1]):
+                dist = abs(intmp[cons, verts])/sqrt(sum(conset2.A[cons, :]**2))
                 if intmp[cons, verts] < 0:  # inside
-                    insidenorm[cons, 0] = insidenorm[cons, 0]-intmp[cons, verts]
+                    insidenorm[cons, 0] = insidenorm[cons, 0] + dist
                 else:  # outside
-                    insidenorm[cons, 1] = insidenorm[cons, 1]-intmp[cons, verts]
+                    insidenorm[cons, 1] = insidenorm[cons, 1] - dist
         return allvinside, insidenorm
