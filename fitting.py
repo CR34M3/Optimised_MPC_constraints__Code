@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """Functions to optimally fit one 'shape' into another."""
 from scipy import array, mat, optimize, eye, c_, r_, ones, tile, sqrt
-from scipy import power, real, size, vstack
+from scipy import power, real, size, vstack, linalg, average
+from scipy.spatial.distance import pdist
 import numpy
 import random
 from conclasses import ConSet
@@ -28,9 +29,8 @@ def tryvol(A, b, cs):
     return qhull(V, "FA"), V
 
 def splitAb(inAb, nd):
-    """Split input Ab matrix into separate A and b."""
-    tmpAb = vstack([inAb[2*x:2*x + nd + 1] 
-                    for x in range(inAb.shape[0]/(nd+1))])
+    """Split input Ab array (1d) into separate A and b."""
+    tmpAb = inAb.reshape(len(inAb)/(nd + 1), nd + 1)
     A = tmpAb[:, :-1]
     b = array([tmpAb[:, -1]]).T
     return A, b
@@ -47,7 +47,7 @@ def genstart(ncon, cs):
         #distance between vertices and centre
         dist = sqrt(power((cs.vert - cmat), 2)*mat(ones((cmat.shape[1], 1)))) 
         return real(sum(power(dist, 2)))
-    cscent = optimize.fmin(cntrobjfn, c0)
+    cscent = optimize.fmin(cntrobjfn, c0, disp = False)
     #2. Generate ncon-1 Gaussian vectors
     spherevecs = ones((ncon, cs.vert.shape[1]))
     for rows in range(spherevecs.shape[0] - 1):
@@ -93,15 +93,24 @@ def fitshape(ncon, cset):
     # Constraints are bounding
     # All vertices within constraint set
     #### Define parameters
-    spset = genstart(ncon, cset) 
+#    spset = genstart(ncon, cset) 
+    spset = ConSet(array([[1, 1], [1, 9], [9, 1]]))
     sp = c_[spset.A, spset.b] # starting point - combined Ab matrix to optimise
+    
     #### Objective fn
     def objfn(Ab, *args):
         """Volume objective function."""
         initcs = args[0]
         A, b = splitAb(Ab, initcs.nd)
-        return -tryvol(A, b, initcs)[0]
+        vol, V = tryvol(A, b, initcs)
+        dists = pdist(V)  # pairwise distances between vertices
+        return -vol*(average(dists))
     #### Constraints
+    def eqconsfn(Ab, *args):
+        """Optimiser equality constraint function."""
+        initcs = args[0]
+        b = splitAb(Ab, initcs.nd)[1]
+        return array([linalg.norm(b) - 100])
     def ieqconsfn(Ab, *args):
         """Optimiser inequality constraint function."""
         initcs = args[0]
@@ -110,21 +119,24 @@ def fitshape(ncon, cset):
         V = tryvol(A, b, initcs)[1]
         iterset = ConSet(V)
         #constraint checking for vertices
-        ineqs = iterset.allinside(initcs)[1][:, 1]
+        ineqs = iterset.allinside(initcs)[1][:,1]
         return ineqs.reshape(size(ineqs), )
     #### Maximise volume
-    print objfn(sp, cset)
-    return optimize.fmin_slsqp(objfn, sp, f_ieqcons=ieqconsfn, args=[cset])
+    optAb = optimize.fmin_slsqp(objfn, sp, f_eqcons=eqconsfn, 
+                               f_ieqcons=ieqconsfn, args=[cset], iprint=3)
+    return optAb
 
 if __name__ == "__main__":
     from pylab import plot, show
     v = array([[0, 0], [10, 0], [10, 10], [0, 10]])
     initcset = ConSet(v)
     Abopt = fitshape(3, initcset)
+    print Abopt
     tA, tb = splitAb(Abopt, initcset.nd)
     ts = -ones(tb.shape)
     optset = ConSet(tA, ts, tb)
     vp2 = vstack([optset.vert, optset.vert[0, :]])
     vp = vstack([v, v[0, :]])
-    plot(vp[:, 0], vp[:, 1], 'b', vp2[:, 0], vp2[:, 1], 'r')
+    vst = array([[1, 1], [1, 9], [9, 1], [1, 1]])
+    plot(vp[:, 0], vp[:, 1], 'b', vp2[:, 0], vp2[:, 1], 'r', vst[:, 0], vst[:, 1], 'g')
     show()
