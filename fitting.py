@@ -22,7 +22,7 @@ def tryvol(A, b, cs):
                   [-numpy.min(cs.vert[:, x]) for x in range(cs.vert.shape[1])]]
         fixb = array([fixb]).T
         fA = r_[fixA, A]
-        fb = 2 * r_[fixb, b]  # double the box size
+        fb = 2. * r_[fixb, b]  # double the box size
         V = con2vert(fA, fb)[0]
     #return vol (normal or fixed) and vertices (normal or fixed) 
     return qhull(V, "FA"), V
@@ -44,7 +44,7 @@ def genstart(ncon, cs):
     spherevecs = ones((ncon, cs.vert.shape[1]))
     for rows in range(spherevecs.shape[0] - 1):
         for cols in range(spherevecs.shape[1]):
-            spherevecs[rows, cols] = random.gauss(0, 0.33)  # TODO: check sigma
+            spherevecs[rows, cols] = random.gauss(0., 0.33)  # TODO: check sigma
     #3. Determine resultant of vectors, add last vector as mirror of resultant
     spherevecs[-1, :] = -sum(spherevecs[:-1, :])
     # points on sphere
@@ -87,7 +87,8 @@ def fitshape(ncon, cset):
     #### Define parameters
     spset = genstart(ncon, cset) 
     #spset = ConSet(array([[1., 1], [1, 9], [9, 1]]))
-    sp = c_[spset.A, spset.b] # starting point - combined Ab matrix to optimise
+    snorm = linalg.norm(spset.b)
+    sp = c_[spset.A, spset.b]/snorm # starting point - combined Ab matrix to optimise
     vp2 = vstack([spset.vert, spset.vert[0, :]])
     plot(vp2[:, 0], vp2[:, 1], 'g')
     
@@ -96,49 +97,51 @@ def fitshape(ncon, cset):
         """Volume objective function."""
         initcs = args[0]
         A, b = splitAb(Ab, initcs.nd)
+        vol, V = tryvol(A, b, initcs)
+        P = 1000.
+        #Penalties
+        # large b norm
+        bnorm = abs(linalg.norm(b) - 1)
+        #print "bnorm = ", bnorm
+        # points outside of init space
+        iterset = ConSet(V)
+        outnorm = linalg.norm(iterset.allinside(initcs)[1])
+        #print "Outnorm = ", outnorm
+        # open shape
         cl = con2vert(A, b)[1]
         if cl:
             closed = 1
         else:
             closed = -1
-        vol = tryvol(A, b, initcs)[0]
-#        print c_[A, -ones(b.shape), b]
-#        print closed * -vol
-#        raw_input("Key...")
-        if not cl:
-            print vol
-        return closed * -vol
-    #### Constraints
-    def eqconsfn(Ab, *args):
-        """Optimiser equality constraint function."""
-        initcs = args[0]
-        b = splitAb(Ab, initcs.nd)[1]
-        return array([linalg.norm(b) - 10])
-    def ieqconsfn(Ab, *args):
-        """Optimiser inequality constraint function."""
-        initcs = args[0]
-        A, b = splitAb(Ab, initcs.nd)
-        # get vertices for constraint set iteration
-        V = tryvol(A, b, initcs)[1]
-        iterset = ConSet(V)
-        #constraint checking for vertices
-        ineqs = iterset.allinside(initcs)[1]
-        return ineqs.ravel()
+#        if not cl:
+#            print vol
+#        print "Objfn = ", (closed * -vol) + P*(bnorm + outnorm)    
+        return (-vol*closed) + P*(bnorm + outnorm)
     #### Maximise volume
-    optAb = optimize.fmin_slsqp(objfn, sp, f_eqcons=eqconsfn, 
-                               f_ieqcons=ieqconsfn, args=[cset], iprint=3)
+    print "Starting objfn =", objfn(sp.ravel(), cset)
+    print "-------------- =", 100000.*(abs(linalg.norm(splitAb(sp.ravel(), cset.nd)[1])-1) + linalg.norm(spset.allinside(cset)[1]))
+    
+#    optAb = optimize.fmin_slsqp(objfn, sp, args=[cset], iter=10000, iprint=3)
+#    optAb = optimize.fmin_powell(objfn, sp, args=[cset], maxiter=10000, disp=True)
+    optAb = optimize.fmin(objfn, sp, args=[cset], maxiter=10000, disp=True)
+    
+    tA, tb = splitAb(optAb, cset.nd)
+    ts = -ones(tb.shape)
+    optset = ConSet(tA, ts, tb)
+    print "Final objfn =", objfn(optAb, cset)
+    print "-------------- =", 100000.*(abs(linalg.norm(splitAb(optAb, cset.nd)[1])-1) + linalg.norm(optset.allinside(cset)[1]))    
+    print optset.closed
     return optAb
 
 if __name__ == "__main__":
     from pylab import plot, show
+    print "GO!"
     v = array([[0, 0], [10, 0], [10, 10], [0, 10]])
     initcset = ConSet(v)
     Abopt = fitshape(3, initcset)
     tA, tb = splitAb(Abopt, initcset.nd)
     ts = -ones(tb.shape)
     optset = ConSet(tA, ts, tb)
-    print optset.vert
-    print optset.allinside(initcset)
     vp2 = vstack([optset.vert, optset.vert[0, :]])
     vp = vstack([v, v[0, :]])
     vst = array([[1, 1], [1, 9], [9, 1], [1, 1]])
