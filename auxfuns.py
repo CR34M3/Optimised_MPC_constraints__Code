@@ -4,11 +4,11 @@ from scipy import mat, array, ones
 import numpy
 import subprocess #to use qhull
 
-def uniqm(A, t=0.01):
+def uniqm(A, t=1e-13):
     """
     Return input matrix with duplicate entries removed.
      A - [matrix] input matrix (possibly containing duplicates)
-     t - [float]  tolerance (default=0.01)
+     t - [float]  tolerance (default=1e-13)
     """
     Nrows = A.shape[0]
     uniquerows = [r1 for r1 in range(Nrows)
@@ -38,7 +38,7 @@ def qhullstr(V):
         number of points (rows of V)
         one string for each row of V
     """
-    V = numpy.array(V) # TODO: only use arrays instead of matrixes
+    V = numpy.array(V)
     return "%i\n%i\n" % (V.shape[1], V.shape[0]) \
            + "\n".join(" ".join(str(e) for e in row) for row in V) 
 

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """Functions to optimally fit one 'shape' into another."""
-from scipy import array, mat, optimize, eye, c_, r_, ones, tile, sqrt
-from scipy import power, real, size, vstack, linalg, average
-from scipy.spatial.distance import pdist
+from scipy import array, optimize, eye, c_, r_, ones, sqrt
+from scipy import vstack, linalg
 import numpy
 import random
 from conclasses import ConSet
@@ -15,7 +14,7 @@ def tryvol(A, b, cs):
     constraint.
     """
     try:
-        V = con2vert(A, b) # get vertices for constraint set iteration
+        V = con2vert(A, b)[0] # get vertices for constraint set iteration
     except NameError: #catch unbound shapes
         #create large box around original shape
         fixA = r_[eye(cs.nd), -eye(cs.nd)]
@@ -24,7 +23,7 @@ def tryvol(A, b, cs):
         fixb = array([fixb]).T
         fA = r_[fixA, A]
         fb = 2 * r_[fixb, b]  # double the box size
-        V = con2vert(fA, fb)
+        V = con2vert(fA, fb)[0]
     #return vol (normal or fixed) and vertices (normal or fixed) 
     return qhull(V, "FA"), V
 
@@ -40,14 +39,7 @@ def genstart(ncon, cs):
     Generate a starting shape (for optimisation) with given number of faces.
     """
     #1. Determine centre of initial region, cscent
-    c0 = ones((1, cs.vert.shape[1]))
-    def cntrobjfn(cntr):
-        """Objective function to determine center of shape."""
-        cmat = tile(cntr, (cs.vert.shape[0], 1))
-        #distance between vertices and centre
-        dist = sqrt(power((cs.vert - cmat), 2)*mat(ones((cmat.shape[1], 1)))) 
-        return real(sum(power(dist, 2)))
-    cscent = optimize.fmin(cntrobjfn, c0, disp = False)
+    cscent = sum(cs.vert)/len(cs.vert)  # assuming the region is convex
     #2. Generate ncon-1 Gaussian vectors
     spherevecs = ones((ncon, cs.vert.shape[1]))
     for rows in range(spherevecs.shape[0] - 1):
@@ -66,7 +58,7 @@ def genstart(ncon, cs):
         #4. Generate tangent planes on sphere at points, convert to inequalities
         A = -(spherepts - cscent)
         b = array([(sum((A*spherepts).T))]).T
-        s = array(-ones(b.shape))
+        s = array(ones(b.shape))
         return ConSet(A, s, b)  # constraints around sphere
     
     #6. Optimise sphere-radius, r, to have all points within initial shape
@@ -93,18 +85,29 @@ def fitshape(ncon, cset):
     # Constraints are bounding
     # All vertices within constraint set
     #### Define parameters
-#    spset = genstart(ncon, cset) 
-    spset = ConSet(array([[1, 1], [1, 9], [9, 1]]))
+    spset = genstart(ncon, cset) 
+    #spset = ConSet(array([[1., 1], [1, 9], [9, 1]]))
     sp = c_[spset.A, spset.b] # starting point - combined Ab matrix to optimise
+    vp2 = vstack([spset.vert, spset.vert[0, :]])
+    plot(vp2[:, 0], vp2[:, 1], 'g')
     
     #### Objective fn
     def objfn(Ab, *args):
         """Volume objective function."""
         initcs = args[0]
         A, b = splitAb(Ab, initcs.nd)
-        vol, V = tryvol(A, b, initcs)
-        dists = pdist(V)  # pairwise distances between vertices
-        return -vol
+        cl = con2vert(A, b)[1]
+        if cl:
+            closed = 1
+        else:
+            closed = -1
+        vol = tryvol(A, b, initcs)[0]
+#        print c_[A, -ones(b.shape), b]
+#        print closed * -vol
+#        raw_input("Key...")
+        if not cl:
+            print vol
+        return closed * -vol
     #### Constraints
     def eqconsfn(Ab, *args):
         """Optimiser equality constraint function."""
@@ -119,8 +122,8 @@ def fitshape(ncon, cset):
         V = tryvol(A, b, initcs)[1]
         iterset = ConSet(V)
         #constraint checking for vertices
-        ineqs = iterset.allinside(initcs)[1][:, 1]
-        return ineqs.reshape(size(ineqs), )
+        ineqs = iterset.allinside(initcs)[1]
+        return ineqs.ravel()
     #### Maximise volume
     optAb = optimize.fmin_slsqp(objfn, sp, f_eqcons=eqconsfn, 
                                f_ieqcons=ieqconsfn, args=[cset], iprint=3)
@@ -131,12 +134,13 @@ if __name__ == "__main__":
     v = array([[0, 0], [10, 0], [10, 10], [0, 10]])
     initcset = ConSet(v)
     Abopt = fitshape(3, initcset)
-    print Abopt
     tA, tb = splitAb(Abopt, initcset.nd)
     ts = -ones(tb.shape)
     optset = ConSet(tA, ts, tb)
+    print optset.vert
+    print optset.allinside(initcset)
     vp2 = vstack([optset.vert, optset.vert[0, :]])
     vp = vstack([v, v[0, :]])
     vst = array([[1, 1], [1, 9], [9, 1], [1, 1]])
-    plot(vp[:, 0], vp[:, 1], 'b', vp2[:, 0], vp2[:, 1], 'r', vst[:, 0], vst[:, 1], 'g')
+    plot(vp[:, 0], vp[:, 1], 'b', vp2[:, 0], vp2[:, 1], 'r')
     show()

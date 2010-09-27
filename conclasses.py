@@ -7,9 +7,11 @@ Author: Andre Campher
 #               - auxfuns
 #               - SciPy
 
-from auxfuns import qhull
+from auxfuns import qhull, mat2ab
 from convertfuns import vert2con, con2vert
-from scipy import hstack, empty, vstack, dot, tile, all, zeros, sqrt
+from scipy import empty, vstack, dot, tile, all, zeros, sqrt, ones, c_, sign
+from scipy import linalg
+from scipy import all as sciall
 
 class ConSet:
     """
@@ -20,9 +22,13 @@ class ConSet:
         if len(inargs) == 1:
             self.vert = inargs[0]
             self.A, self.s, self.b = vert2con(self.vert)
+            self.closed = True
         elif len(inargs) == 3:
-            self.A, self.s, self.b = inargs
-            self.vert = con2vert(self.A, self.b)
+            if all(sign(inargs[1]) == -1):  # ensure an all -1 sign vector
+                self.A, self.s, self.b = inargs
+            else:
+                self.A, self.s, self.b = mat2ab(c_[inargs])                
+            self.vert, self.closed = con2vert(self.A, self.b)
         else:
             exit(1)  # TODO: Raise exception
         self.nd = self.A.shape[1]
@@ -45,7 +51,7 @@ class ConSet:
         """Determine intersection between current constraint set and another"""
         combA = vstack((self.A, conset2.A))
         combb = vstack((self.b, conset2.b))
-        intcombvert = con2vert(combA, combb)
+        intcombvert = con2vert(combA, combb)[0]
         return vert2con(intcombvert)
     
     def allinside(self, conset2):
@@ -57,16 +63,24 @@ class ConSet:
         # Inside check
         Av = dot(conset2.A, self.vert.T)
         bv = tile(conset2.b, (1, self.vert.shape[0]))
-        allvinside = all(Av < bv)
+        eps = 1e-13
+        intmpvals = Av - bv
+        intmp = intmpvals <= eps
+        allvinside = sciall(intmp)
         # Inside norm
         # insidenorm = array([[con1in,con1out],[con2in,con2out]...])
-        insidenorm = zeros((Av.shape[0], 2))
-        intmp = Av - bv
+        insidenorm = zeros((Av.shape[0], 1))
         for cons in range(Av.shape[0]):
             for verts in range(Av.shape[1]):
-                dist = abs(intmp[cons, verts])/sqrt(sum(conset2.A[cons, :]**2))
-                if intmp[cons, verts] < 0:  # inside
-                    insidenorm[cons, 0] = insidenorm[cons, 0] + dist
-                else:  # outside
-                    insidenorm[cons, 1] = insidenorm[cons, 1] - dist
+                dist = abs(intmpvals[cons, verts])/sqrt(sum(conset2.A[cons, :]**2))
+                if not intmp[cons, verts]:  # outside
+                    insidenorm[cons] = insidenorm[cons] - dist
         return allvinside, insidenorm
+    
+if __name__ == "__main__":
+    from scipy import array
+    v = array([[0., 0], [10, 0], [10, 10], [0, 10]])
+    set1 = ConSet(v)
+    v2 = array([[-1., -1], [10, 0], [10, 10], [0, 10]])
+    set2 = ConSet(v2)
+    print set2.allinside(set1)

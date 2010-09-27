@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Functions to calculate vertices from constraints and vice versa."""
-from scipy import ones, mat, vstack, zeros, hstack, eye, array
+from scipy import ones, mat, vstack, zeros, hstack, eye, array, dot, tile
+from scipy import all as sciall
 from numpy import linalg, matlib
 from auxfuns import uniqm, qhull
 
@@ -8,6 +9,7 @@ def vert2con(V):
     """
     Convert sets of vertices to a list of constraints (of the feasible region).
     Return A, b and s of the set;  Ax < b   (s is the sign-vector [to be used later])
+    vert2con always closes the shape and generates inequalities accordingly.
     """
     # Dependencies: * qhull (libqhull5, qhull-bin)
     #               * scipy
@@ -23,27 +25,16 @@ def vert2con(V):
 def con2vert(A, b):
     """
     Convert sets of constraints to a list of vertices (of the feasible region).
+    If the shape is open, con2vert returns False for the closed property.
     """
     # Python implementation of con2vert.m by Michael Kleder (July 2005),
     #  available: http://www.mathworks.com/matlabcentral/fileexchange/7894
     #  -con2vert-constraints-to-vertices
     # Author: Michael Kelder (Original)
     #         Andre Campher (Python implementation)
-    A = mat(A)
-    b = mat(b)
-    c = linalg.lstsq(A, b)[0]
-    b = b-A*c
-    D = A/matlib.repmat(b, 1, A.shape[1])
-#    Dtest = vstack((D, zeros([1, D.shape[1]])))
-
-##== Volume error check == (not working)
-#    VolDt = qhull(Dtest, "FA") #get volume of D-hull
-#    VolD = qhull(D, "FA") #get volume of D-hull
-#
-#    if VolDt > VolD:
-#        print 'error : Non-bounding constraints detected. Exiting...'
-#        exit(1)
-#== ==
+    c = linalg.lstsq(mat(A), mat(b))[0]
+    btmp = mat(b)-mat(A)*c
+    D = mat(A)/matlib.repmat(btmp, 1, A.shape[1])
 
     fmatv = qhull(D, "Ft") #vertices on facets
 
@@ -53,9 +44,14 @@ def con2vert(A, b):
         G[ix, :] = linalg.lstsq(F, ones((F.shape[0], 1)))[0].transpose()
 
     V = G + matlib.repmat(c.transpose(), G.shape[0], 1)
-    ux = uniqm(V, 0.0001)
+    ux = uniqm(V)
 
-    return ux
+    eps = 1e-13
+    Av = dot(A, ux.T)
+    bv = tile(b, (1, ux.shape[0]))
+    closed = sciall(Av - bv <= eps)
+
+    return ux, closed
 
 def con2pscon(A, s, b):
     """
