@@ -85,12 +85,12 @@ def fitshape(ncon, cset):
     # Constraints are bounding
     # All vertices within constraint set
     #### Define parameters
-    spset = genstart(ncon, cset) 
-    #spset = ConSet(array([[1., 1], [1, 9], [9, 1]]))
+#    spset = genstart(ncon, cset) 
+    spset = ConSet(array([[5, 5], [5, 6], [6, 5]]))
     snorm = linalg.norm(spset.b)
     sp = c_[spset.A, spset.b]/snorm # starting point - combined Ab matrix to optimise
     vp2 = vstack([spset.vert, spset.vert[0, :]])
-    plot(vp2[:, 0], vp2[:, 1], 'g')
+    plot(vp2[:, 0], vp2[:, 1], 'g-')
     
     #### Objective fn
     def objfn(Ab, *args):
