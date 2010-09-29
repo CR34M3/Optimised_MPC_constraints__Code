@@ -25,7 +25,7 @@ def tryvol(A, b, cs):
         fb = 2. * r_[fixb, b]  # double the box size
         V = con2vert(fA, fb)[0]
     #return vol (normal or fixed) and vertices (normal or fixed) 
-    return qhull(V, "FA"), V
+    return qhull(V, "FS"), V
 
 def splitAb(inAb, nd):
     """Split input Ab array (1d) into separate A and b."""
@@ -85,12 +85,12 @@ def fitshape(ncon, cset):
     # Constraints are bounding
     # All vertices within constraint set
     #### Define parameters
-#    spset = genstart(ncon, cset) 
-    spset = ConSet(array([[5, 5], [5, 6], [6, 5]]))
+    spset = genstart(ncon, cset) 
+#    spset = ConSet(array([[8, 4], [8.2, 4.5], [8.5, 3.8]]))
     snorm = linalg.norm(spset.b)
     sp = c_[spset.A, spset.b]/snorm # starting point - combined Ab matrix to optimise
     vp2 = vstack([spset.vert, spset.vert[0, :]])
-    plot(vp2[:, 0], vp2[:, 1], 'g-')
+    plot(vp2[:, 0], vp2[:, 1], 'g--')
     
     #### Objective fn
     def objfn(Ab, *args):
@@ -98,39 +98,23 @@ def fitshape(ncon, cset):
         initcs = args[0]
         A, b = splitAb(Ab, initcs.nd)
         vol, V = tryvol(A, b, initcs)
-        P = 1000.
+        Pv = 200.
+        Pn = 100.
         #Penalties
         # large b norm
         bnorm = abs(linalg.norm(b) - 1)
-        #print "bnorm = ", bnorm
         # points outside of init space
         iterset = ConSet(V)
         outnorm = linalg.norm(iterset.allinside(initcs)[1])
-        #print "Outnorm = ", outnorm
         # open shape
         cl = con2vert(A, b)[1]
         if cl:
             closed = 1
         else:
             closed = -1
-#        if not cl:
-#            print vol
-#        print "Objfn = ", (closed * -vol) + P*(bnorm + outnorm)    
-        return (-vol*closed) + P*(bnorm + outnorm)
+        return (-vol*closed) + Pn*(bnorm**2) + Pv*(outnorm**3)
     #### Maximise volume
-    print "Starting objfn =", objfn(sp.ravel(), cset)
-    print "-------------- =", 100000.*(abs(linalg.norm(splitAb(sp.ravel(), cset.nd)[1])-1) + linalg.norm(spset.allinside(cset)[1]))
-    
-#    optAb = optimize.fmin_slsqp(objfn, sp, args=[cset], iter=10000, iprint=3)
-#    optAb = optimize.fmin_powell(objfn, sp, args=[cset], maxiter=10000, disp=True)
-    optAb = optimize.fmin(objfn, sp, args=[cset], maxiter=10000, disp=True)
-    
-    tA, tb = splitAb(optAb, cset.nd)
-    ts = -ones(tb.shape)
-    optset = ConSet(tA, ts, tb)
-    print "Final objfn =", objfn(optAb, cset)
-    print "-------------- =", 100000.*(abs(linalg.norm(splitAb(optAb, cset.nd)[1])-1) + linalg.norm(optset.allinside(cset)[1]))    
-    print optset.closed
+    optAb = optimize.fmin(objfn, sp, args=[cset], maxiter=20000, disp=True)
     return optAb
 
 if __name__ == "__main__":

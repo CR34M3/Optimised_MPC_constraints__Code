@@ -35,7 +35,7 @@ class ConSet:
         
     def vol(self):
         """Return 'volume' of feasible region."""
-        return qhull(self.vert,"FA")
+        return qhull(self.vert,"FS")
         
     def outconlin(self, model):
         """Convert constraints to output space using a linear model"""       
