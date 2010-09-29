@@ -53,9 +53,9 @@ def qhull(V, qstring):
                               stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         Vc = qhullp.communicate(qhullstr(V))[0] #qhull output to Vc
         
-        if qstring == "FA": #calc summary and volume
-            ks = Vc.split('\n')[-3]
-            Vol = float(ks.split(' ')[-1]) #get volume of D-hull
+        if qstring == "FS": #calc area and volume
+            ks = Vc.split('\n')[-2]
+            Vol = float(ks.split(' ')[-2]) #get volume of D-hull
             return Vol
         elif qstring == "Ft": #calc vertices and facets
             ks = Vc.split('\n')
@@ -76,7 +76,6 @@ def qhull(V, qstring):
 if __name__ == "__main__":
     import doctest
     doctest.testfile("tests/auxfunstests.txt")   
-    
     
 #TODO - auxfuns
 # qhull error handling   

@@ -25,7 +25,7 @@ def tryvol(A, b, cs):
         fb = 2 * r_[fixb, b]  # double the box size
         V = con2vert(fA, fb)[0]
     #return vol (normal or fixed) and vertices (normal or fixed) 
-    return qhull(V, "FA"), V
+    return qhull(V, "FS"), V
 
 def splitAb(inAb, nd):
     """Split input Ab array (1d) into separate A and b."""
@@ -127,11 +127,6 @@ def fitshape(ncon, cset):
         else:
             closed = -1
         vol = tryvol(A, b, initcs)[0]
-#        print c_[A, -ones(b.shape), b]
-#        print closed * -vol
-#        raw_input("Key...")
-        if not cl:
-            print vol
         return closed * -vol
     #### Constraints
     def eqconsfn(Ab, *args):
@@ -152,7 +147,9 @@ def fitshape(ncon, cset):
     #### Maximise volume
     optAb = optimize.fmin_slsqp(objfn, sp, f_eqcons=eqconsfn, 
                                f_ieqcons=ieqconsfn, args=[cset], iprint=3)
-    return optAb
+    tA, tb = splitAb(optAb, initcset.nd)
+    ts = -ones(tb.shape)
+    return ConSet(tA, ts, tb)
 
 def fitcube(cset):
     """
@@ -165,39 +162,29 @@ def fitcube(cset):
     # Constraints are bounding
     # All vertices within constraint set
     #### Define parameters
-    spset = genstart(ncon, cset) 
-    #spset = ConSet(array([[1., 1], [1, 9], [9, 1]]))
-    sp = c_[spset.A, spset.b] # starting point - combined Ab matrix to optimise
+    spset = genstart('r', cset) 
+    sp = spset.b.ravel() # starting point - b matrix to optimise
     vp2 = vstack([spset.vert, spset.vert[0, :]])
     plot(vp2[:, 0], vp2[:, 1], 'g')
-    
     #### Objective fn
     def objfn(Ab, *args):
         """Volume objective function."""
         initcs = args[0]
-        A, b = splitAb(Ab, initcs.nd)
+        A = r_[eye(initcs.nd), -eye(initcs.nd)]
+        b = array([Ab]).T
         cl = con2vert(A, b)[1]
         if cl:
             closed = 1
         else:
             closed = -1
         vol = tryvol(A, b, initcs)[0]
-#        print c_[A, -ones(b.shape), b]
-#        print closed * -vol
-#        raw_input("Key...")
-        if not cl:
-            print vol
         return closed * -vol
     #### Constraints
-    def eqconsfn(Ab, *args):
-        """Optimiser equality constraint function."""
-        initcs = args[0]
-        b = splitAb(Ab, initcs.nd)[1]
-        return array([linalg.norm(b) - 10])
     def ieqconsfn(Ab, *args):
         """Optimiser inequality constraint function."""
         initcs = args[0]
-        A, b = splitAb(Ab, initcs.nd)
+        A = r_[eye(initcs.nd), -eye(initcs.nd)]
+        b = array([Ab]).T
         # get vertices for constraint set iteration
         V = tryvol(A, b, initcs)[1]
         iterset = ConSet(V)
@@ -205,22 +192,20 @@ def fitcube(cset):
         ineqs = iterset.allinside(initcs)[1]
         return ineqs.ravel()
     #### Maximise volume
-    optAb = optimize.fmin_slsqp(objfn, sp, f_eqcons=eqconsfn, 
-                               f_ieqcons=ieqconsfn, args=[cset], iprint=3)
-    return optAb
+    optAb = optimize.fmin_slsqp(objfn, sp, f_ieqcons=ieqconsfn, args=[cset], 
+                                iprint=3)
+    tA = r_[eye(cset.nd), -eye(cset.nd)]
+    tb = array([optAb]).T
+    ts = -ones(tb.shape)
+    return ConSet(tA, ts, tb)
 
 if __name__ == "__main__":
     from pylab import plot, show
-    v = array([[0, 0], [0, 5], [2, 7], [7, 3], [4, 0]])
+    v = array([[0, 0], [0, 10], [10, 10], [7, 5], [3, 1]])
     initcset = ConSet(v)
-    optset = genstart('r', initcset)
-#    Abopt = fitshape(3, initcset)
-#    tA, tb = splitAb(Abopt, initcset.nd)
-#    ts = -ones(tb.shape)
-#    optset = ConSet(tA, ts, tb)
-#    print optset.vert
-#    print optset.allinside(initcset)
-    vp2 = vstack([optset.vert, optset.vert[0, :]])
+    optsol = fitshape(3, initcset)
+    print optsol.closed
+    vp2 = vstack([optsol.vert, optsol.vert[0, :]])
     vp = vstack([v, v[0, :]])
 #    vst = array([[1, 1], [1, 9], [9, 1], [1, 1]])
     plot(vp[:, 0], vp[:, 1], 'b', vp2[:, 0], vp2[:, 1], 'r')
