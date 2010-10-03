@@ -17,16 +17,16 @@ from auxfuns import mat2ab
 # define AIS and DOS (equations : Ax<b)
 # equations in the form Ax<b, matrix = [A s b] 
 # with s the sign vector [1:>, -1:<]
-AISA, AISs, AISb = mat2ab(array([[1., 0, 1, -1],
-                                 [1, 0, -1,  1],
-                                 [0, 1,  1, -1],
-                                 [0, 1, -1,  1]]))
+AISA, AISs, AISb = mat2ab(array([[1., 0., 1., -1.],
+                                 [1., 0., -1.,  1.],
+                                 [0., 1.,  1., -1.],
+                                 [0., 1., -1.,  1.]]))
 AIS = ConSet(AISA, AISs, AISb) 
 
-DOSA, DOSs, DOSb = mat2ab(array([[1., 0,  1, -1],
-                                 [1, 0, -1,  1],
-                                 [0, 1,  1, -1],
-                                 [0, 1, -1,  1]]))
+DOSA, DOSs, DOSb = mat2ab(array([[1., 0.,  1., -1.],
+                                 [1., 0., -1.,  1.],
+                                 [0., 1.,  1., -1.],
+                                 [0., 1., -1.,  1.]]))
 DOS = ConSet(DOSA, DOSs, DOSb)
 
 # define G (steady-state model)

@@ -22,7 +22,7 @@ def tryvol(A, b, cs):
                   [-numpy.min(cs.vert[:, x]) for x in range(cs.vert.shape[1])]]
         fixb = array([fixb]).T
         fA = r_[fixA, A]
-        fb = 2 * r_[fixb, b]  # double the box size
+        fb = 2. * r_[fixb, b]  # double the box size
         V = con2vert(fA, fb)[0]
     #return vol (normal or fixed) and vertices (normal or fixed) 
     return qhull(V, "FS"), V
@@ -112,41 +112,35 @@ def fitshape(ncon, cset):
     #### Define parameters
     spset = genstart('a', cset, ncon) 
     #spset = ConSet(array([[1., 1], [1, 9], [9, 1]]))
-    sp = c_[spset.A, spset.b] # starting point - combined Ab matrix to optimise
+    snorm = linalg.norm(spset.b)
+    sp = c_[spset.A, spset.b]/snorm # starting point - combined Ab matrix to optimise
     vp2 = vstack([spset.vert, spset.vert[0, :]])
-    plot(vp2[:, 0], vp2[:, 1], 'g')
+    plot(vp2[:, 0], vp2[:, 1], 'g--')
     
     #### Objective fn
     def objfn(Ab, *args):
         """Volume objective function."""
         initcs = args[0]
         A, b = splitAb(Ab, initcs.nd)
+        vol, V = tryvol(A, b, initcs)
+        Pv = 200.
+        Pn = 100.
+        #Penalties
+        # large b norm
+        bnorm = abs(linalg.norm(b) - 1)
+        # points outside of init space
+        iterset = ConSet(V)
+        outnorm = linalg.norm(iterset.allinside(initcs)[1])
+        # open shape
         cl = con2vert(A, b)[1]
         if cl:
             closed = 1
         else:
             closed = -1
         vol = tryvol(A, b, initcs)[0]
-        return closed * -vol
-    #### Constraints
-    def eqconsfn(Ab, *args):
-        """Optimiser equality constraint function."""
-        initcs = args[0]
-        b = splitAb(Ab, initcs.nd)[1]
-        return array([linalg.norm(b) - 10])
-    def ieqconsfn(Ab, *args):
-        """Optimiser inequality constraint function."""
-        initcs = args[0]
-        A, b = splitAb(Ab, initcs.nd)
-        # get vertices for constraint set iteration
-        V = tryvol(A, b, initcs)[1]
-        iterset = ConSet(V)
-        #constraint checking for vertices
-        ineqs = iterset.allinside(initcs)[1]
-        return ineqs.ravel()
+        return (-vol*closed) + Pn*(bnorm**2) + Pv*(outnorm**3)
     #### Maximise volume
-    optAb = optimize.fmin_slsqp(objfn, sp, f_eqcons=eqconsfn, 
-                               f_ieqcons=ieqconsfn, args=[cset], iprint=3)
+    optAb = optimize.fmin(objfn, sp, args=[cset], maxiter=20000, disp=True)
     tA, tb = splitAb(optAb, initcset.nd)
     ts = -ones(tb.shape)
     return ConSet(tA, ts, tb)
@@ -201,6 +195,7 @@ def fitcube(cset):
 
 if __name__ == "__main__":
     from pylab import plot, show
+    print "GO!"
     v = array([[0, 0], [0, 10], [10, 10], [7, 5], [3, 1]])
     initcset = ConSet(v)
     optsol = fitshape(3, initcset)
