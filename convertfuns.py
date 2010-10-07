@@ -13,7 +13,6 @@ def vert2con(V):
     """
     # Dependencies: * qhull (libqhull5, qhull-bin)
     #               * scipy
-    #               * gendatafile
     k = qhull(V,"n") #convert to martrix with vertices
     # k is a (n+1)x(p) matrix in the form [A b] (from qhull doc: Ax < -b is
     # satisfied), thus;
