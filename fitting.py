@@ -98,7 +98,7 @@ def genstart(shapetype, *args):
             finrad = startrad
         return spherefn(finrad, cscent, spherevecs)
 
-def fitshape(ncon, cset):
+def fitshape(spset, cset):
     """
     Fit a constraint set (specified by the number of constraints) within an existing
     constraint set.
@@ -110,12 +110,11 @@ def fitshape(ncon, cset):
     # Constraints are bounding
     # All vertices within constraint set
     #### Define parameters
-    spset = genstart('a', cset, ncon) 
     #spset = ConSet(array([[1., 1], [1, 9], [9, 1]]))
     snorm = linalg.norm(spset.b)
     sp = c_[spset.A, spset.b]/snorm # starting point - combined Ab matrix to optimise
-    vp2 = vstack([spset.vert, spset.vert[0, :]])
-    plot(vp2[:, 0], vp2[:, 1], 'g--')
+#    vp2 = vstack([spset.vert, spset.vert[0, :]])
+#    plot(vp2[:, 0], vp2[:, 1], 'g--')
     
     #### Objective fn
     def objfn(Ab, *args):
@@ -145,7 +144,7 @@ def fitshape(ncon, cset):
     ts = -ones(tb.shape)
     return ConSet(tA, ts, tb)
 
-def fitcube(cset):
+def fitcube(cset, spset, solver):
     """
     Fit a rectangle (high/low limits on outputs) within an existing
     constraint set.
@@ -156,13 +155,12 @@ def fitcube(cset):
     # Constraints are bounding
     # All vertices within constraint set
     #### Define parameters
-    spset = genstart('r', cset) 
     sp = spset.b.ravel() # starting point - b matrix to optimise
-    vp2 = vstack([spset.vert, spset.vert[0, :]])
-    plot(vp2[:, 0], vp2[:, 1], 'g')
-    #### Objective fn
+#    vp2 = vstack([spset.vert, spset.vert[0, :]])
+#    plot(vp2[:, 0], vp2[:, 1], 'g')
+    #### Objective fn (SLSQP)
     def objfn(Ab, *args):
-        """Volume objective function."""
+        """Volume objective function for SLSQP."""
         initcs = args[0]
         A = r_[eye(initcs.nd), -eye(initcs.nd)]
         b = array([Ab]).T
@@ -185,23 +183,54 @@ def fitcube(cset):
         #constraint checking for vertices
         ineqs = iterset.allinside(initcs)[1]
         return ineqs.ravel()
+    
+    #### Objective fn (FMIN)
+    def objfn2(Ab, *args):
+        """Volume objective function for fmin (Simplex)."""
+        initcs = args[0]
+        A = r_[eye(initcs.nd), -eye(initcs.nd)]
+        b = array([Ab]).T
+        vol, V = tryvol(A, b, initcs)
+        Pv = 200.
+        #Penalties
+        # points outside of init space
+        iterset = ConSet(V)
+        outnorm = linalg.norm(iterset.allinside(initcs)[1])
+        # open shape
+        cl = con2vert(A, b)[1]
+        if cl:
+            closed = 1
+        else:
+            closed = -1
+        vol = tryvol(A, b, initcs)[0]
+        return (-vol*closed) + Pv*(outnorm**3)
+    
     #### Maximise volume
-    optAb = optimize.fmin_slsqp(objfn, sp, f_ieqcons=ieqconsfn, args=[cset], 
+    if solver in 'aA':
+        optAb = optimize.fmin_slsqp(objfn, sp, f_ieqcons=ieqconsfn, args=[cset], 
                                 iprint=3)
+    elif solver in 'bB':
+        optAb = optimize.fmin(objfn2, sp, args=[cset], maxiter=20000, disp=True)
     tA = r_[eye(cset.nd), -eye(cset.nd)]
     tb = array([optAb]).T
     ts = -ones(tb.shape)
     return ConSet(tA, ts, tb)
 
 if __name__ == "__main__":
-    from pylab import plot, show
+#    from pylab import plot, show
     print "GO!"
-    v = array([[0, 0], [0, 10], [10, 10], [7, 5], [3, 1]])
+    v = array([[0, 0], [0, 10], [10, 10], [10, 0]])
     initcset = ConSet(v)
-    optsol = fitshape(3, initcset)
+#    sps = genstart('a', initcset, 3) 
+#    optsol = fitshape(sps, initcset)
+#    print optsol.closed
+    
+    sps = genstart('r', initcset) 
+    optsol = fitcube(initcset, sps, 'a')
     print optsol.closed
-    vp2 = vstack([optsol.vert, optsol.vert[0, :]])
-    vp = vstack([v, v[0, :]])
-#    vst = array([[1, 1], [1, 9], [9, 1], [1, 1]])
-    plot(vp[:, 0], vp[:, 1], 'b', vp2[:, 0], vp2[:, 1], 'r')
-    show()
+    
+#    vp2 = vstack([optsol.vert, optsol.vert[0, :]])
+#    vp = vstack([v, v[0, :]])
+##    vst = array([[1, 1], [1, 9], [9, 1], [1, 1]])
+#    plot(vp[:, 0], vp[:, 1], 'b', vp2[:, 0], vp2[:, 1], 'r')
+#    show()
