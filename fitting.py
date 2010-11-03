@@ -98,7 +98,7 @@ def genstart(shapetype, *args):
             finrad = startrad
         return spherefn(finrad, cscent, spherevecs)
 
-def fitshape(spset, cset):
+def fitshape(cset, spset, solver):
     """
     Fit a constraint set (specified by the number of constraints) within an existing
     constraint set.
@@ -116,9 +116,9 @@ def fitshape(spset, cset):
 #    vp2 = vstack([spset.vert, spset.vert[0, :]])
 #    plot(vp2[:, 0], vp2[:, 1], 'g--')
     
-    #### Objective fn
+    #### Objective fn (FMIN)
     def objfn(Ab, *args):
-        """Volume objective function."""
+        """Volume objective function for fmin (Simplex)."""
         initcs = args[0]
         A, b = splitAb(Ab, initcs.nd)
         vol, V = tryvol(A, b, initcs)
@@ -137,12 +137,54 @@ def fitshape(spset, cset):
         else:
             closed = -1
         vol = tryvol(A, b, initcs)[0]
+        #print (-vol*closed) + Pn*(bnorm**2) + Pv*(outnorm**3)
         return (-vol*closed) + Pn*(bnorm**2) + Pv*(outnorm**3)
+       
+    #### Objective fn (SLSQP)
+    def objfn2(Ab, *args):
+        """Volume objective function for SLSQP."""
+        initcs = args[0]
+        A, b = splitAb(Ab, initcs.nd)
+        cl = con2vert(A, b)[1]
+        if cl:
+            closed = 1
+        else:
+            closed = -1
+        vol = tryvol(A, b, initcs)[0]
+        return closed * -vol
+    def eqconsfn(Ab, *args):
+        """Optimiser equality constraint function."""
+        initcs = args[0]
+        b = splitAb(Ab, initcs.nd)[1]
+        return array([linalg.norm(b) - 10])
+    def ieqconsfn(Ab, *args):
+        """Optimiser inequality constraint function."""
+        initcs = args[0]
+        A, b = splitAb(Ab, initcs.nd)
+        # get vertices
+        V = tryvol(A, b, initcs)[1]
+        iterset = ConSet(V)
+        # constraint checking
+        ineqs = iterset.allinside(initcs)[1]
+        return ineqs.ravel()
+    
     #### Maximise volume
-    optAb = optimize.fmin(objfn, sp, args=[cset], maxiter=20000, disp=True)
-    tA, tb = splitAb(optAb, initcset.nd)
+    if solver in 'aA':
+        optAb = optimize.fmin_slsqp(objfn2, sp, f_eqcons=eqconsfn, 
+                                    f_ieqcons=ieqconsfn, args=[cset], iprint=3)
+    elif solver in 'bB':
+        optAb = optimize.fmin(objfn, sp, args=[cset], maxiter=20000, disp=True)
+    tA, tb = splitAb(optAb, cset.nd)
     ts = -ones(tb.shape)
-    return ConSet(tA, ts, tb)
+    optsol = ConSet(tA, ts, tb)
+    if solver in 'bB':
+        optcent = sum(optsol.vert)/len(optsol.vert)
+        itersol = ConSet(optsol.vert)
+        while not itersol.allinside(cset)[0]:
+            vi = (itersol.vert - optcent)*0.999 + optcent
+            itersol = ConSet(vi)
+        optsol = itersol
+    return optsol
 
 def fitcube(cset, spset, solver):
     """
@@ -203,6 +245,7 @@ def fitcube(cset, spset, solver):
         else:
             closed = -1
         vol = tryvol(A, b, initcs)[0]
+        #print (-vol*closed) + Pv*(outnorm**3)
         return (-vol*closed) + Pv*(outnorm**3)
     
     #### Maximise volume
@@ -210,27 +253,38 @@ def fitcube(cset, spset, solver):
         optAb = optimize.fmin_slsqp(objfn, sp, f_ieqcons=ieqconsfn, args=[cset], 
                                 iprint=3)
     elif solver in 'bB':
-        optAb = optimize.fmin(objfn2, sp, args=[cset], maxiter=20000, disp=True)
+        optAb = optimize.fmin(objfn2, sp, args=[cset], maxiter=50000, disp=True)
     tA = r_[eye(cset.nd), -eye(cset.nd)]
     tb = array([optAb]).T
     ts = -ones(tb.shape)
-    return ConSet(tA, ts, tb)
+    optsol = ConSet(tA, ts, tb)
+    if solver in 'bB':
+        optcent = sum(optsol.vert)/len(optsol.vert)
+        itersol = ConSet(optsol.vert)
+        while not itersol.allinside(cset)[0]:
+            vi = (itersol.vert - optcent)*0.999 + optcent
+            itersol = ConSet(vi)
+        optsol = itersol
+    return optsol
+
 
 if __name__ == "__main__":
-#    from pylab import plot, show
-    print "GO!"
+    from pylab import plot, show, legend
+    print "GO"
     v = array([[0, 0], [0, 10], [10, 10], [10, 0]])
     initcset = ConSet(v)
-#    sps = genstart('a', initcset, 3) 
-#    optsol = fitshape(sps, initcset)
-#    print optsol.closed
-    
-    sps = genstart('r', initcset) 
-    optsol = fitcube(initcset, sps, 'a')
-    print optsol.closed
-    
-#    vp2 = vstack([optsol.vert, optsol.vert[0, :]])
-#    vp = vstack([v, v[0, :]])
-##    vst = array([[1, 1], [1, 9], [9, 1], [1, 1]])
-#    plot(vp[:, 0], vp[:, 1], 'b', vp2[:, 0], vp2[:, 1], 'r')
-#    show()
+    spshape = genstart('a', initcset, 3)
+    optsol = fitshape(initcset,spshape,'b')
+    vp2 = vstack([optsol.vert, optsol.vert[0, :]])
+    vpt = vp2[2,:].copy()
+    vp2[2,:] = vp2[3,:]
+    vp2[3,:] = vpt
+    vp = vstack([v, v[0, :]])
+    vst = vstack([spshape.vert, spshape.vert[0, :]])
+    plot(vp[:, 0], vp[:, 1], 'b', linewidth=3, label='Initial set')
+    plot(vp2[:, 0], vp2[:, 1], 'r', linewidth=3, label='Fitted set')
+    plot(vst[:, 0], vst[:, 1], 'g', linewidth=3, label='Starting point')
+#    plot(vp[:, 0], vp[:, 1], 'b', linewidth=3, label='Initial set')
+#    plot(vp2[:, 0], vp2[:, 1], 'r', linewidth=3, label='Fitted set')
+    legend(loc=3)
+    show()

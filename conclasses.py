@@ -75,12 +75,30 @@ class ConSet:
                 dist = abs(intmpvals[cons, verts])/sqrt(sum(conset2.A[cons, :]**2))
                 if not intmp[cons, verts]:  # outside
                     insidenorm[cons] = insidenorm[cons] - dist
-        return allvinside, insidenorm
+        # Outside volume
+        outsidevol = self.vol() - ConSet(*self.intersect(conset2)).vol()
+        return allvinside, insidenorm, outsidevol
     
 if __name__ == "__main__":
     from scipy import array
-    v = array([[0., 0], [10, 0], [10, 10], [0, 10]])
-    set1 = ConSet(v)
+    from pylab import plot, show, legend
+    
+    v = array([[0, 0], [0, 10], [10, 10], [10, 0]])
+    initcset = ConSet(v)
+    vp = vstack([v, v[0, :]])
+    plot(vp[:, 0], vp[:, 1], 'b', linewidth=3)
+
     v2 = array([[-1., -1], [10, 0], [10, 10], [0, 10]])
     set2 = ConSet(v2)
-    print set2.allinside(set1)
+    vp2 = vstack([v2, v2[0, :]])
+    plot(vp2[:, 0], vp2[:, 1], 'r', linewidth=3)
+
+    print set2.allinside(initcset)[2]
+
+    set3 = ConSet(*set2.intersect(initcset))
+    vp3 = vstack([set3.vert, set3.vert[0, :]])
+    plot(vp3[:, 0], vp3[:, 1], 'g', linewidth=3)
+    show()
+    
+
+#TODO: Memoize volume calculation

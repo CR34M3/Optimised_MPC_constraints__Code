@@ -33,7 +33,7 @@ def qhullstr(V):
     """ 
     generate string qhull input format.
     
-    yields a newline separated stirng of format:
+    yields a newline separated string of format:
         dimensions (columns of V)
         number of points (rows of V)
         one string for each row of V

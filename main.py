@@ -17,8 +17,8 @@ from auxfuns import mat2ab
 # define AIS and DOS (equations : Ax<b)
 # equations in the form Ax<b, matrix = [A s b] 
 # with s the sign vector [1:>, -1:<]
-AISA, AISs, AISb = mat2ab(array([[1., 0., 1.,  -0.125],
-                                 [1., 0., -1., 0.0525],
+AISA, AISs, AISb = mat2ab(array([[1., 0., 1.,  -0.0525],
+                                 [1., 0., -1., 0.125],
                                  [0., 1.,  1., -10],
                                  [0., 1., -1., 10.]]))
 AIS = ConSet(AISA, AISs, AISb) 
