@@ -76,8 +76,8 @@ class ConSet:
                 if not intmp[cons, verts]:  # outside
                     insidenorm[cons] = insidenorm[cons] - dist
         # Outside volume
-        outsidevol = self.vol() - ConSet(*self.intersect(conset2)).vol()
-        return allvinside, insidenorm, outsidevol
+#        outsidevol = self.vol() - ConSet(*self.intersect(conset2)).vol()
+        return allvinside, insidenorm#, outsidevol
     
 if __name__ == "__main__":
     from scipy import array
@@ -88,12 +88,12 @@ if __name__ == "__main__":
     vp = vstack([v, v[0, :]])
     plot(vp[:, 0], vp[:, 1], 'b', linewidth=3)
 
-    v2 = array([[-1., -1], [10, 0], [10, 10], [0, 10]])
+    v2 = array([[1., 1], [10, 0], [10, 10], [0, 10]])
     set2 = ConSet(v2)
     vp2 = vstack([v2, v2[0, :]])
     plot(vp2[:, 0], vp2[:, 1], 'r', linewidth=3)
 
-    print set2.allinside(initcset)[2]
+    print set2.allinside(initcset)
 
     set3 = ConSet(*set2.intersect(initcset))
     vp3 = vstack([set3.vert, set3.vert[0, :]])
@@ -102,3 +102,4 @@ if __name__ == "__main__":
     
 
 #TODO: Memoize volume calculation
+#TODO: Add support for non-square systems
