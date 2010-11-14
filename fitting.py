@@ -33,18 +33,6 @@ def splitAb(inAb, nd):
     A = tmpAb[:, :-1]
     b = array([tmpAb[:, -1]]).T
     return A, b
-
-def onfaces(iterset, initcs):
-    """Determine if vertices of a set is on the facets of another set."""
-    bt = tile(initcs.b, (1, iterset.vert.shape[0]))
-    k = mat(initcs.A)*mat(iterset.vert.T) - bt
-    eps = 10e-13
-    onf = sum(abs(k), axis=0)
-    for n in range(k.shape[1]):
-        if any(abs(k[:, n]) < eps):
-            if all(k[:, n] < eps):
-                onf[0, n] = 0
-    return onf
      
 def genstart(shapetype, *args):
     """
@@ -60,7 +48,7 @@ def genstart(shapetype, *args):
         ncon = args[1]
     
     #1. Determine centre of initial region, cscent
-    cscent = sum(cs.vert, axis=0)/len(cs.vert)  # assuming the region is convex
+    cscent = cs.cscent  # assuming the region is convex
     def spherefn(srad, cent, svecs):
         """
         Function to create points on a sphere (of radius, srad), convert them to
@@ -77,15 +65,15 @@ def genstart(shapetype, *args):
     if shapetype in 'rR':  # Rectangle
         Astart = r_[eye(cs.nd), -eye(cs.nd)]
         sstart = -ones((cs.nd*2, 1))
-        bstart = lambda k: array([r_[cscent.T + k, -(cscent.T - k)]]).T
+        bstart = lambda k: array(r_[cscent.T + k, -(cscent.T - k)])
         kstart = 1.0
         if ConSet(Astart, sstart, bstart(kstart)).allinside(cs)[0]:
             while ConSet(Astart, sstart, bstart(kstart)).allinside(cs)[0]:
-                kstart = kstart * 1.1
-            kfin = kstart / 1.1    
+                kstart = kstart * 1.01
+            kfin = kstart / 1.01
         elif not ConSet(Astart, sstart, bstart(kstart)).allinside(cs)[0]:
             while not ConSet(Astart, sstart, bstart(kstart)).allinside(cs)[0]:
-                kstart = kstart / 1.1
+                kstart = kstart / 1.01
             kfin = kstart        
         return ConSet(Astart, sstart, bstart(kfin))
     elif shapetype in 'aA':  # Arbitrary shape
@@ -101,11 +89,11 @@ def genstart(shapetype, *args):
         startrad = cs.vol()**(1./cs.nd)
         if spherefn(startrad, cscent, spherevecs).allinside(cs)[0]:
             while spherefn(startrad, cscent, spherevecs).allinside(cs)[0]:
-                startrad = startrad * 1.1
-            finrad = startrad / 1.1    
+                startrad = startrad * 1.01
+            finrad = startrad / 1.01    
         elif not spherefn(startrad, cscent, spherevecs).allinside(cs)[0]:
             while not spherefn(startrad, cscent, spherevecs).allinside(cs)[0]:
-                startrad = startrad / 1.1
+                startrad = startrad / 1.01
             finrad = startrad
         return spherefn(finrad, cscent, spherevecs)
 
@@ -244,7 +232,7 @@ def fitcube(cset, spset, solver):
         iterset = ConSet(V)
         #constraint checking for vertices
         ineqs = iterset.allinside(initcs)[1]
-        return -linalg.norm(ineqs)
+        return array([-linalg.norm(ineqs)])
 #        print ineqs.ravel()
 #        return ineqs.ravel()
 #        ineqs = iterset.allinside(initcs)[2]
@@ -293,49 +281,97 @@ def fitcube(cset, spset, solver):
         optsol = itersol
     return optsol
 
+def fitset(cset, *args):
+    """
+    Return a fitted constraint set within cset.
+      cset - [ConSet] to fit within
+      *args (in this order) - (stype)[string] 'a'rbitrary / 'r'ectangular
+                            - (solver)[string] 'a' SLSQP / 'b' fmin / 'c' Cobyla
+                            - (ncon)[integer] number of constraints to fit
+                                cset.nd + 1 < ncon < cset.A.shape[0]
+    """
+    #Get args
+    stype = args[0]
+    solver = args[1]
+    if stype in 'aA':
+        ncon = args[2]
+        nostarts = 25
+    else:
+        ncon = 0
+        nostarts = 1
+    #Starting point
+    refvol = 0
+    for k in range(nostarts):
+        spshape = genstart(stype, cset, ncon)
+        if spshape.vol() > refvol:
+            finalsp = spshape
+            refvol = finalsp.vol()
+    #Fit set
+    if stype in 'aA':
+        optsol = fitshape(cset, finalsp, solver)
+    elif stype in 'rR':
+        optsol = fitcube(cset, finalsp, solver)
+    #Return
+    return optsol
 
+def fitmaxbox(cset, sf):
+    """
+    Return high/low constraint set around the given constraint set.
+      cset - [ConSet] to fit over
+      sf - [integer] safety factor (fraction 0-1)
+    """
+    #Get args
+    dev = sf*((cset.vert.max(0))-cset.cscent)
+    maxvals = cset.vert.max(0) + dev#-cset.cscent) + cset.cscent
+    minvals = cset.vert.min(0) - dev#-cset.cscent) + cset.cscent
+    Abox = r_[eye(cset.nd), -eye(cset.nd)]
+    bbox = c_[maxvals, -minvals].T
+    sbox = -ones((Abox.shape[0], 1))
+    return ConSet(Abox, sbox, bbox)
+    
+    
 if __name__ == "__main__":
-    from pylab import plot, show, legend
-    print "Initset"
-#    v = array([[0, 0], [0, 10], [10, 10], [15, 5], [10, 0]])
-#    initcset = ConSet(v)
-    v = array([[0., 0, 0], [0, 0, 10], [0, 10, 0], [0, 10, 10], [10, 0, 0], [10, 0, 10], [10, 10, 0], [10, 10, 10]])
+#    from pylab import plot, show, legend
+#    print "Initset"
+##    v = array([[0, 0], [0, 10], [10, 10], [15, 5], [10, 0]])
+##    initcset = ConSet(v)
+    v = array([[0., 0], [0, 10], [10, 0], [10, 10]])
     initcset = ConSet(v)
-
-#    vt = array([[11., 11, 11], 
-#    [0, 0, 10], 
-#    [0, 10, 23],
-#    [10, 0, 0]])
-#    testset = ConSet(vt)
-#    print testset.allinside(initcset)
-
+#
+##    vt = array([[11., 11, 11], 
+##    [0, 0, 10], 
+##    [0, 10, 23],
+##    [10, 0, 0]])
+##    testset = ConSet(vt)
+##    print testset.allinside(initcset)
+#
     print "Starting point"
     refvol = 0
-    for k in range(20):
-        spshape = genstart('a', initcset, 4)
+    for k in range(3):
+        spshape = genstart('r', initcset, 4)
         print spshape.vol()
         if spshape.vol() > refvol:
             finalsp = spshape
             refvol = finalsp.vol()
     print "Solving"
-    optsol = fitshape(initcset, finalsp, 'b')
+    optsol = fitcube(initcset, finalsp, 'b')
     print optsol.vol()
     print linalg.norm(optsol.b)
     print optsol.vert
     
-#    print "Plotting"
-#    vp2 = vstack([optsol.vert, optsol.vert[0, :]])
-#    vpt = vp2[2, :].copy()
-#    vp2[2, :] = vp2[3, :]
-#    vp2[3, :] = vpt
-#    
-#    vp = vstack([v, v[0, :]])
-#    vst = vstack([finalsp.vert, finalsp.vert[0, :]])
-#    plot(vp[:, 0], vp[:, 1], 'b', linewidth=3, label='Initial set')
-#    plot(vst[:, 0], vst[:, 1], 'g', linewidth=3, label='Starting point')
-#    plot(vp2[:, 0], vp2[:, 1], 'r', linewidth=3, label='Fitted set')
+##    print "Plotting"
+##    vp2 = vstack([optsol.vert, optsol.vert[0, :]])
+##    vpt = vp2[2, :].copy()
+##    vp2[2, :] = vp2[3, :]
+##    vp2[3, :] = vpt
+##    
+##    vp = vstack([v, v[0, :]])
+##    vst = vstack([finalsp.vert, finalsp.vert[0, :]])
 ##    plot(vp[:, 0], vp[:, 1], 'b', linewidth=3, label='Initial set')
+##    plot(vst[:, 0], vst[:, 1], 'g', linewidth=3, label='Starting point')
 ##    plot(vp2[:, 0], vp2[:, 1], 'r', linewidth=3, label='Fitted set')
-##    legend(loc=3)
-#    print optsol.vert
-#    show()
+###    plot(vp[:, 0], vp[:, 1], 'b', linewidth=3, label='Initial set')
+###    plot(vp2[:, 0], vp2[:, 1], 'r', linewidth=3, label='Fitted set')
+###    legend(loc=3)
+##    print optsol.vert
+##    show()

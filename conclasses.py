@@ -9,8 +9,8 @@ Author: Andre Campher
 
 from auxfuns import qhull, mat2ab
 from convertfuns import vert2con, con2vert
-from scipy import empty, vstack, dot, tile, all, zeros, sqrt, ones, c_, sign
-from scipy import linalg
+from scipy import empty, vstack, dot, tile, all, zeros, sqrt, sum, c_, sign
+from scipy import linalg, mat, ones, array
 from scipy import all as sciall
 
 class ConSet:
@@ -27,31 +27,75 @@ class ConSet:
             if all(sign(inargs[1]) == -1):  # ensure an all -1 sign vector
                 self.A, self.s, self.b = inargs
             else:
-                self.A, self.s, self.b = mat2ab(c_[inargs])                
+                self.A, self.s, self.b = mat2ab(c_[inargs])         
             self.vert, self.closed = con2vert(self.A, self.b)
         else:
             exit(1)  # TODO: Raise exception
         self.nd = self.A.shape[1]
+        self.cscent = sum(self.vert, axis=0)/len(self.vert)
         
     def vol(self):
         """Return 'volume' of feasible region."""
         return qhull(self.vert,"FS")
+
+    def oi(self, conset2):
+        """
+        Return the Operabilty Index (Vinson, 2000) of the set, where conset2 
+        is equivalent to the DOS
+        """
+        Vint = ConSet(*self.intersect(conset2)).vol()
+        return Vint/conset2.vol()
         
-    def outconlin(self, model):
-        """Convert constraints to output space using a linear model"""       
-        # calc AOS (from G and AIS)
+    def outconlin(self, model, ss):
+        """Convert constraints to another space using a linear model"""       
+        # e.g. calc AOS (from G and AIS)
         outverttemp = empty([1, self.vert.shape[1]])
-        for v in self.vert:
+        # first center 'input'-space around [0]
+        inverttemp = self.vert - self.cscent
+        for v in inverttemp:
             x = model*v.transpose()
             outverttemp = vstack((outverttemp, x.transpose()))
         #remove first line of junk data from outverttemp and convert
+        outverttemp = outverttemp + ss
         return vert2con(outverttemp[1:, :]) 
     
     def intersect(self, conset2):
         """Determine intersection between current constraint set and another"""
+        def remredcons(A, b, verts):
+            """Reduce a constraint set by removing unnecessary constraints."""
+            eps = 10e-13
+            #Remove duplicates
+            tempAb = c_[A, b]/b
+            print tempAb
+            keepAb = zeros((1, tempAb.shape[1]))
+            for k in range(tempAb.shape[0]):
+                if any(all(abs(tempAb - tempAb[k, :])<eps, axis=1)):
+                    if not any(all(abs(keepAb - tempAb[k, :])<eps, axis=1)):
+                        print tempAb[k, :]
+                        keepAb = vstack((keepAb, tempAb[k, :]))
+            #Remove redundancies
+#            bt = tile(b, (1, verts.shape[0]))
+#            k = mat(A)*mat(verts.T) - bt
+#            print k
+#            bt = tile(b/b, (1, verts.shape[0]))
+#            k = mat(A/b)*mat(verts.T) - bt
+#            print k
+#            onf = sum(abs(k), axis=0)
+            return keepAb
+        #Combine constraints and vertices
         combA = vstack((self.A, conset2.A))
         combb = vstack((self.b, conset2.b))
+        combv = vstack((self.vert, conset2.vert))
+        #Remove redundant constraints
+        AISA, AISs, AISb = mat2ab(array([[1., 0., 1.,  0],
+                                         [1., 0., -1., 10],
+                                         [0., 1.,  1., 0],
+                                         [0., 1., -1., 10.],
+                                         [1., 1., -1., 15.],
+                                         [1., 0., -1., 10.]]))
+        #Calc and return intersection
         intcombvert = con2vert(combA, combb)[0]
+#        return remredcons(AISA, AISb, 1)
         return vert2con(intcombvert)
     
     def allinside(self, conset2):
@@ -79,27 +123,62 @@ class ConSet:
 #        outsidevol = self.vol() - ConSet(*self.intersect(conset2)).vol()
         return allvinside, insidenorm#, outsidevol
     
-if __name__ == "__main__":
-    from scipy import array
-    from pylab import plot, show, legend
-    
-    v = array([[0, 0], [0, 10], [10, 10], [10, 0]])
-    initcset = ConSet(v)
-    vp = vstack([v, v[0, :]])
-    plot(vp[:, 0], vp[:, 1], 'b', linewidth=3)
-
-    v2 = array([[1., 1], [10, 0], [10, 10], [0, 10]])
-    set2 = ConSet(v2)
-    vp2 = vstack([v2, v2[0, :]])
-    plot(vp2[:, 0], vp2[:, 1], 'r', linewidth=3)
-
-    print set2.allinside(initcset)
-
-    set3 = ConSet(*set2.intersect(initcset))
-    vp3 = vstack([set3.vert, set3.vert[0, :]])
-    plot(vp3[:, 0], vp3[:, 1], 'g', linewidth=3)
-    show()
-    
-
-#TODO: Memoize volume calculation
-#TODO: Add support for non-square systems
+#if __name__ == "__main__":
+#    from pylab import plot, show, legend
+#
+##========== TEST AREA 1 ==========
+##    v = array([[30, 40], [30, 50], [50, 40]])
+###    v = array([[ 36.915,  61.457],
+###                [ 36.685,  60.873],
+###                [ 99.315,  95.127],
+###                [ 99.085,  94.543]])
+###    v2 = array([[ 66.,  82.],
+###                 [ 68.,  82.],
+###                 [ 66.,  78.],
+###                 [ 68.,  78.]])
+##    initcset = ConSet(v)
+##    vp = vstack([v, v[0, :]])
+##
+##    v2 = array([[60, 80], [60, 30], [40, 30], [40, 80.]])
+##    set2 = ConSet(v2)
+##    vp2 = vstack([v2, v2[0, :]])
+##
+###    print set2.allinside(initcset)
+##
+###    vv = initcset.vert - initcset.cscent
+###    vv2 = set2.vert - set2.cscent
+###
+###    set2 = ConSet(vv2)
+###    initcset = ConSet(vv)
+##
+##    plot(vp2[:, 0], vp2[:, 1], 'r', linewidth=3)
+##    plot(vp[:, 0], vp[:, 1], 'b', linewidth=3)
+##
+##    print ConSet(set2.A/set2.b, set2.s, set2.b/set2.b).vert
+##    #print set2.intersect(initcset)
+##
+###    set3 = ConSet(*set2.intersect(initcset))
+###    vp3 = vstack([set3.vert, set3.vert[0, :]])
+###    plot(vp3[:, 0], vp3[:, 1], 'g', linewidth=3)
+##    show()
+#
+#
+##========== TEST AREA 3 ==========
+#AISA, AISs, AISb = mat2ab(array([[1., 0., 1.,  0],
+#                                 [1., 0., -1., 10],
+#                                 [0., 1.,  1., 0],
+#                                 [0., 1., -1., 10.],
+#                                 [1., 1., -1., 15.]]))
+#AIS = ConSet(AISA, AISs, AISb)
+##AIS2 = ConSet(AISA/AISb, AISs, AISb/AISb)
+#print AIS.intersect(AIS)
+##vp1 = vstack([AIS.vert, AIS.vert[0, :]])
+###vp2 = vstack([AIS2.vert, AIS2.vert[0, :]])
+##
+##plot(vp1[:, 0], vp1[:, 1], 'b', linewidth=3)
+###plot(vp2[:, 0], vp2[:, 1], 'r', linewidth=3)
+##show()
+#    
+#
+##TODO: Memoize volume calculation
+##TODO: Add support for non-square systems
