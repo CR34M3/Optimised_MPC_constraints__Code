@@ -7,11 +7,12 @@ Author: Andre Campher
 #               - auxfuns
 #               - SciPy
 
-from auxfuns import qhull, mat2ab
+from auxfuns import qhull, mat2ab, uniqm, splitAb
 from convertfuns import vert2con, con2vert
 from scipy import empty, vstack, dot, tile, all, zeros, sqrt, sum, c_, sign
-from scipy import linalg, mat, ones, array
+from scipy import mat, ones, linalg, array
 from scipy import all as sciall
+import numpy
 
 class ConSet:
     """
@@ -63,40 +64,51 @@ class ConSet:
         """Determine intersection between current constraint set and another"""
         def remredcons(A, b, verts):
             """Reduce a constraint set by removing unnecessary constraints."""
-            eps = 10e-13
-            #Remove duplicates
-            tempAb = c_[A, b]/b
-            print tempAb
-            keepAb = zeros((1, tempAb.shape[1]))
-            for k in range(tempAb.shape[0]):
-                if any(all(abs(tempAb - tempAb[k, :])<eps, axis=1)):
-                    if not any(all(abs(keepAb - tempAb[k, :])<eps, axis=1)):
-                        print tempAb[k, :]
-                        keepAb = vstack((keepAb, tempAb[k, :]))
-            #Remove redundancies
-#            bt = tile(b, (1, verts.shape[0]))
-#            k = mat(A)*mat(verts.T) - bt
-#            print k
-#            bt = tile(b/b, (1, verts.shape[0]))
-#            k = mat(A/b)*mat(verts.T) - bt
-#            print k
-#            onf = sum(abs(k), axis=0)
-            return keepAb
+            eps = 10e-9
+            #1 Co-planar constraints;
+            #  Remove as not to affect 3rd check
+            Ab = c_[A, b]
+            Abnorms = ones((Ab.shape[0], 1))
+            for i in range(Ab.shape[0]):
+                Abnorms[i] = linalg.norm(Ab[i, :])
+            Abn = Ab/Abnorms
+            Abkeep = ones((0, Ab.shape[1]))
+            Abtest = ones((0, Ab.shape[1]))
+            for r1 in range(Abn.shape[0]):
+                noocc = ones((1, 0))
+                for r2 in range(Abn.shape[0]):
+                    #print abs(Abn[r1, :] - Abn[r2, :])
+                    if numpy.all(abs(Abn[r1, :] - Abn[r2, :]) < eps):
+                        noocc = c_[noocc, r2]
+                if noocc.size == 1:
+                    Abtest = vstack([Abtest, Ab[r1, :]])
+                else:
+                    Abkeep = vstack([Abkeep, Ab[r1, :]])
+            if Abkeep.shape[0] > 1:
+                Abkeep = uniqm(Abkeep, eps)
+            #2 Vert subset satisfying; no action needed (redundancy uncertain)
+            #3 All vert satisfying constraints;
+            A, b = splitAb(array(Abtest).ravel(), verts.shape[1])
+            keepA = ones((0, A.shape[1]))
+            keepb = ones((0, 1))
+            bt = tile(b, (1, verts.shape[0]))
+            k = mat(A)*mat(verts.T) - bt
+            kk = sum(k > eps, axis=1)
+            for i in range(len(kk)):
+                if kk[i] != 0:
+                    keepA = vstack([keepA, A[i, :]])
+                    keepb = vstack([keepb, b[i, :]])
+            outAb = vstack([c_[keepA, keepb], Abkeep])
+            return splitAb(outAb.ravel(), verts.shape[1])
         #Combine constraints and vertices
         combA = vstack((self.A, conset2.A))
         combb = vstack((self.b, conset2.b))
         combv = vstack((self.vert, conset2.vert))
         #Remove redundant constraints
-        AISA, AISs, AISb = mat2ab(array([[1., 0., 1.,  0],
-                                         [1., 0., -1., 10],
-                                         [0., 1.,  1., 0],
-                                         [0., 1., -1., 10.],
-                                         [1., 1., -1., 15.],
-                                         [1., 0., -1., 10.]]))
+        ncombA, ncombb = remredcons(combA, combb, combv)
         #Calc and return intersection
         intcombvert = con2vert(combA, combb)[0]
-#        return remredcons(AISA, AISb, 1)
-        return vert2con(intcombvert)
+        return intcombvert
     
     def allinside(self, conset2):
         """
@@ -112,7 +124,6 @@ class ConSet:
         intmp = intmpvals <= eps
         allvinside = sciall(intmp)
         # Inside norm
-        # insidenorm = array([[con1in,con1out],[con2in,con2out]...])
         insidenorm = zeros((Av.shape[0], 1))
         for cons in range(Av.shape[0]):
             for verts in range(Av.shape[1]):
@@ -120,65 +131,4 @@ class ConSet:
                 if not intmp[cons, verts]:  # outside
                     insidenorm[cons] = insidenorm[cons] - dist
         # Outside volume
-#        outsidevol = self.vol() - ConSet(*self.intersect(conset2)).vol()
         return allvinside, insidenorm#, outsidevol
-    
-#if __name__ == "__main__":
-#    from pylab import plot, show, legend
-#
-##========== TEST AREA 1 ==========
-##    v = array([[30, 40], [30, 50], [50, 40]])
-###    v = array([[ 36.915,  61.457],
-###                [ 36.685,  60.873],
-###                [ 99.315,  95.127],
-###                [ 99.085,  94.543]])
-###    v2 = array([[ 66.,  82.],
-###                 [ 68.,  82.],
-###                 [ 66.,  78.],
-###                 [ 68.,  78.]])
-##    initcset = ConSet(v)
-##    vp = vstack([v, v[0, :]])
-##
-##    v2 = array([[60, 80], [60, 30], [40, 30], [40, 80.]])
-##    set2 = ConSet(v2)
-##    vp2 = vstack([v2, v2[0, :]])
-##
-###    print set2.allinside(initcset)
-##
-###    vv = initcset.vert - initcset.cscent
-###    vv2 = set2.vert - set2.cscent
-###
-###    set2 = ConSet(vv2)
-###    initcset = ConSet(vv)
-##
-##    plot(vp2[:, 0], vp2[:, 1], 'r', linewidth=3)
-##    plot(vp[:, 0], vp[:, 1], 'b', linewidth=3)
-##
-##    print ConSet(set2.A/set2.b, set2.s, set2.b/set2.b).vert
-##    #print set2.intersect(initcset)
-##
-###    set3 = ConSet(*set2.intersect(initcset))
-###    vp3 = vstack([set3.vert, set3.vert[0, :]])
-###    plot(vp3[:, 0], vp3[:, 1], 'g', linewidth=3)
-##    show()
-#
-#
-##========== TEST AREA 3 ==========
-#AISA, AISs, AISb = mat2ab(array([[1., 0., 1.,  0],
-#                                 [1., 0., -1., 10],
-#                                 [0., 1.,  1., 0],
-#                                 [0., 1., -1., 10.],
-#                                 [1., 1., -1., 15.]]))
-#AIS = ConSet(AISA, AISs, AISb)
-##AIS2 = ConSet(AISA/AISb, AISs, AISb/AISb)
-#print AIS.intersect(AIS)
-##vp1 = vstack([AIS.vert, AIS.vert[0, :]])
-###vp2 = vstack([AIS2.vert, AIS2.vert[0, :]])
-##
-##plot(vp1[:, 0], vp1[:, 1], 'b', linewidth=3)
-###plot(vp2[:, 0], vp2[:, 1], 'r', linewidth=3)
-##show()
-#    
-#
-##TODO: Memoize volume calculation
-##TODO: Add support for non-square systems

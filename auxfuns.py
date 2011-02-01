@@ -4,6 +4,13 @@ from scipy import mat, array, ones
 import numpy
 import subprocess #to use qhull
 
+def splitAb(inAb, nd):
+    """Split input Ab array (1d) into separate A and b."""
+    tmpAb = inAb.reshape(len(inAb)/(nd + 1), nd + 1)
+    A = tmpAb[:, :-1]
+    b = array([tmpAb[:, -1]]).T
+    return A, b
+
 def uniqm(A, t=1e-13):
     """
     Return input matrix with duplicate entries removed.
