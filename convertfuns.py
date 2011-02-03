@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Functions to calculate vertices from constraints and vice versa."""
-from scipy import ones, mat, vstack, zeros, hstack, eye, array, dot, tile
+from scipy import ones, mat, vstack, zeros, hstack, eye, array, dot, tile, sum
 from scipy import all as sciall
 from numpy import linalg, matlib
 from auxfuns import uniqm, qhull
@@ -52,45 +52,48 @@ def con2vert(A, b):
 
     return ux, closed
 
-def con2pscon(A, s, b):
+def con2pscon(cset, G, type):
     """
-    Convert a set of constraints to a set of pseudo constraints using only
+    Convert a constraint set to another constraint with only
     high/low limits.
+        cset - constraint set to convert [ConSet]
+        G - model of original set [array]
+        type - type of model conversion to be done [string]
+                'i'nput constraint set
+                'o'utput constraint set
     """
-    #Take Asb matrix as input
-    #Determine necessary conversions
-    ###Check for single row entries (and ignore)
-    checkmat = zeros((1, A.shape[1]))
-    tempcvmat = zeros((0, A.shape[1]))
-    tempA = zeros((0, A.shape[1]))
-    tempsb = zeros((0, 2))
-    origA = zeros((0, A.shape[1]))
-    origsb = zeros((0, 2))
-    nconv = 0
-    for r in range(0, A.shape[0]):
-        if sum(A[r, :] == checkmat) < A.shape[1] - 1:  
-            #if less than n-1 zeros, convert
-            nconv = nconv + 1 #flag as conversion
-            tempA = vstack((tempA, A[r, :]))
-            # normalise b
-            tempsb = vstack((tempsb, hstack((s[r], b[r]/abs(b[r])))))
-            #add to tempcvmat 
-            tempcvmat = vstack((tempcvmat, A[r, :]/abs(b[r]))) 
-        else:                                #if n-1 zeros, just build
-            origA = vstack((origA, A[r, :])) #keep values and positions
-            origsb = vstack((origsb, hstack((s[r], b[r]))))
-    if nconv > 0:
-        padcol = zeros((origA.shape[0], nconv))
-        padrow = zeros((nconv, origA.shape[1]))
-        padvar = eye(nconv)
-        psA = vstack((hstack((origA, padcol)), hstack((padrow, padvar))))
-        pssb = vstack((origsb, tempsb))
-        convertmat = vstack((ones((A.shape[0] - nconv, A.shape[1])), tempcvmat))
-        return hstack([psA, pssb]), convertmat
-    else:   #if no conversions were made
-        return hstack([A, s, b]), ones(A.shape)
-    #Express cset as combination of linear inequalities with high/low limits
-    
+    #Check for single variable entries
+    checkmat = sum(zeros(cset.A.shape) == cset.A, axis=1)
+    print checkmat
+    #Determine number of conversions
+    nconv = sum(checkmat < cset.nd-1)
+    print nconv
+    if nconv:
+        #keep original high/low limits (s remains unchanged)
+        keepA = vstack([cset.A[x, :] for x in range(cset.A.shape[0]) 
+                        if checkmat[x]])
+        keepb = vstack([cset.b[x, :] for x in range(cset.b.shape[0]) 
+                        if checkmat[x]])
+        fixA = vstack([cset.A[x, :] for x in range(cset.A.shape[0]) 
+                        if not checkmat[x]])
+        fixb = vstack([cset.b[x, :] for x in range(cset.b.shape[0]) 
+                        if not checkmat[x]])
+        print keepA, keepb
+        tempA = zeros((keepA.shape[0]+nconv, keepA.shape[1]+nconv))
+        tempA[:keepA.shape[0], :keepA.shape[1]] = keepA
+        tempA[-nconv:, -nconv:] = eye(nconv)
+        tempb = vstack((keepb, fixb))
+        print tempA, tempb
+        if type in "iI":
+            tempG = vstack((G, fixA))
+        elif type in "oO":
+            fixG = sum(G, axis=0)*fixA
+            tempG = vstack((G, fixG))
+        else:
+            tempG = G
+        return tempA, cset.s, tempb, tempG
+    else:
+        return cset.A, cset.s, cset.b, G
 
 if __name__ == "__main__":
     import doctest

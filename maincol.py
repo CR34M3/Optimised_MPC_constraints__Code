@@ -13,6 +13,7 @@ from conclasses import ConSet
 from scipy import array, linalg
 from auxfuns import mat2ab
 from fitting import fitset
+from convertfuns import con2pscon
 
 #MAIN START =================================================================
 
@@ -48,6 +49,7 @@ DOSi = ConSet(*mat2ab(array([[-0.47486499,  0.88005866, -1, 36.55612415],
                              [ 1.,         0.,         -1,  68.],
                              [ 0.,        -1.,         -1, -78.]])))
 
+
 # Calc additional spaces
 DIS = ConSet(*DOS.outconlin(Gi, AIS.cscent))
 DOSn = fitset(DOSi, 'r', 'a')
@@ -55,3 +57,6 @@ DISn = ConSet(*DOSn.outconlin(Gi, AIS.cscent))
 DISi = ConSet(*DOSi.outconlin(Gi, AIS.cscent))
 DIS2 = ConSet(*AIS.intersect(DIS))
 DOS2 = ConSet(*DIS2.outconlin(G, lss))
+
+# Calc modified constraints and model for high/low limits
+modA, mods, modb, modG = con2pscon(DOSi, G, 'o')
