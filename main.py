@@ -30,19 +30,14 @@ DOSA, DOSs, DOSb = mat2ab(array([[1., 0.,  1., -1.],
 DOS = ConSet(DOSA, DOSs, DOSb)
 
 # define G (steady-state model)
+lss = array([[50., 50.]]) # nominal operating point (used for model generation)
 G = array([[1, 0.0025],
            [2, 0.0025]])  # gain matrix - atm linear steady state matrix
 
 # calc AOS (from G and AIS)
-# TODO: fix output of outconlin (should be 3)
-AOSA, AOSs, AOSb = AIS.outconlin(G)  
+AOSA, AOSs, AOSb = AIS.outconlin(G, AIS.cscent, lss)  
 AOS = ConSet(AOSA, AOSs, AOSb)
-print AOS.vert+array([[0.25,0.125]])
+print AOS.vert
 
 # Calc intersection of AOS|DOS
 #print AOS.intersect(DOS)
-
-#TODO
-# (Vectors defining inside/outside to calc)
-# (Plotting for lower dimensional shapes)
-# (Replace mat with array)

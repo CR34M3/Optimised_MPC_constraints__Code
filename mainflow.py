@@ -44,14 +44,16 @@ Gi = linalg.inv(G)
 
 # calc AOS (from G and AIS)
 lss = array([[1.322, 16.4048]]) # nominal operating point (used for model generation)
-AOS = ConSet(*AIS.outconlin(G, lss))
-mbox = ConSet(*fitmaxbox(AOS, 0.2).intersect(POS))
+AOS = ConSet(*AIS.outconlin(G, AIS.cscent, lss))
+mbox = ConSet(fitmaxbox(AOS, 0.2).intersect(POS))
 
 # -- AOS/DOS intersection
-DOSi = ConSet(*AOS.intersect(DOS))
-DIS = ConSet(*DOS.outconlin(Gi, AIS.cscent))
+DOSi = ConSet(AOS.intersect(DOS))
+DIS = ConSet(*DOS.outconlin(Gi, lss, AIS.cscent))
 
 # -- Fitted constraints
 DOSn = fitset(DOSi, 'r', 'a')
-DISn = ConSet(*DOSn.outconlin(Gi, AIS.cscent))
-DISi = ConSet(*DIS.intersect(AIS))
+DISn = ConSet(*DOSn.outconlin(Gi, lss, AIS.cscent))
+DISi = ConSet(DIS.intersect(AIS))
+
+print DISi

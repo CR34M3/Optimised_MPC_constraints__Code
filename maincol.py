@@ -40,7 +40,7 @@ Gi = linalg.inv(G)
 
 # calc AOS (from G and AIS)
 lss = array([[68., 78.]]) # nominal operating point (used for model generation)
-AOSA, AOSs, AOSb = AIS.outconlin(G, lss)
+AOSA, AOSs, AOSb = AIS.outconlin(G, AIS.cscent, lss)
 AOS = ConSet(AOSA, AOSs, AOSb)
 #TODO: check nominal op.point use
 
@@ -51,12 +51,12 @@ DOSi = ConSet(*mat2ab(array([[-0.47486499,  0.88005866, -1, 36.55612415],
 
 
 # Calc additional spaces
-DIS = ConSet(*DOS.outconlin(Gi, AIS.cscent))
+DIS = ConSet(*DOS.outconlin(Gi, lss, AIS.cscent))
 DOSn = fitset(DOSi, 'r', 'a')
-DISn = ConSet(*DOSn.outconlin(Gi, AIS.cscent))
-DISi = ConSet(*DOSi.outconlin(Gi, AIS.cscent))
-DIS2 = ConSet(*AIS.intersect(DIS))
-DOS2 = ConSet(*DIS2.outconlin(G, lss))
+DISn = ConSet(*DOSn.outconlin(Gi, lss, AIS.cscent))
+DISi = ConSet(*DOSi.outconlin(Gi, lss, AIS.cscent))
+DIS2 = ConSet(AIS.intersect(DIS))
+DOS2 = ConSet(*DIS2.outconlin(G, AIS.cscent, lss))
 
 # Calc modified constraints and model for high/low limits
 modA, mods, modb, modG = con2pscon(DOSi, G, 'o')

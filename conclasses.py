@@ -47,17 +47,25 @@ class ConSet:
         Vint = ConSet(*self.intersect(conset2)).vol()
         return Vint/conset2.vol()
         
-    def outconlin(self, model, ss):
-        """Convert constraints to another space using a linear model"""       
-        # e.g. calc AOS (from G and AIS)
+    def outconlin(self, model, iss, oss):
+        """
+        Convert constraints to another space using a linear model 
+        e.g. calc AOS (from G and AIS).
+            iss [vector] - nominal steady state of current space ("from")
+            oss [vector] - nominal steady state of transformed space ("to")
+        """
         outverttemp = empty([1, self.vert.shape[1]])
-        # first center 'input'-space around [0]
+        # handle shifting
+        ishift = self.cscent - iss #input space dev
+        oshift = model*ishift.T #output space dev
+        fshift = oshift.T + oss #output space offset
+        # center 'input'-space around [0]
         inverttemp = self.vert - self.cscent
         for v in inverttemp:
             x = model*v.transpose()
             outverttemp = vstack((outverttemp, x.transpose()))
-        #remove first line of junk data from outverttemp and convert
-        outverttemp = outverttemp + ss
+        # remove first line of junk data from outverttemp and shift
+        outverttemp = outverttemp + fshift
         return vert2con(outverttemp[1:, :]) 
     
     def intersect(self, conset2):

@@ -64,10 +64,8 @@ def con2pscon(cset, G, type):
     """
     #Check for single variable entries
     checkmat = sum(zeros(cset.A.shape) == cset.A, axis=1)
-    print checkmat
     #Determine number of conversions
     nconv = sum(checkmat < cset.nd-1)
-    print nconv
     if nconv:
         #keep original high/low limits (s remains unchanged)
         keepA = vstack([cset.A[x, :] for x in range(cset.A.shape[0]) 
@@ -78,12 +76,10 @@ def con2pscon(cset, G, type):
                         if not checkmat[x]])
         fixb = vstack([cset.b[x, :] for x in range(cset.b.shape[0]) 
                         if not checkmat[x]])
-        print keepA, keepb
         tempA = zeros((keepA.shape[0]+nconv, keepA.shape[1]+nconv))
         tempA[:keepA.shape[0], :keepA.shape[1]] = keepA
         tempA[-nconv:, -nconv:] = eye(nconv)
         tempb = vstack((keepb, fixb))
-        print tempA, tempb
         if type in "iI":
             tempG = vstack((G, fixA))
         elif type in "oO":
